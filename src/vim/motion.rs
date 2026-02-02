@@ -246,9 +246,7 @@ pub fn find_big_word_end_forward(line: &str, col: usize) -> usize {
 
 #[allow(dead_code)]
 pub fn find_first_non_blank(line: &str) -> usize {
-    line.chars()
-        .position(|c| !c.is_whitespace())
-        .unwrap_or(0)
+    line.chars().position(|c| !c.is_whitespace()).unwrap_or(0)
 }
 
 #[allow(dead_code)]
@@ -326,7 +324,10 @@ pub fn find_matching_bracket(lines: &[&str], pos: Position) -> Option<Position> 
                 return None;
             }
             row -= 1;
-            col = lines.get(row).map(|l| l.chars().count().saturating_sub(1)).unwrap_or(0);
+            col = lines
+                .get(row)
+                .map(|l| l.chars().count().saturating_sub(1))
+                .unwrap_or(0);
         }
     }
 }
@@ -588,49 +589,88 @@ mod tests {
     #[test]
     fn test_matching_bracket_parens() {
         let lines = vec!["(hello)"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(0, 6)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 6)), Some(Position::new(0, 0)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(0, 6))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 6)),
+            Some(Position::new(0, 0))
+        );
     }
 
     #[test]
     fn test_matching_bracket_square() {
         let lines = vec!["[hello]"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(0, 6)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 6)), Some(Position::new(0, 0)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(0, 6))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 6)),
+            Some(Position::new(0, 0))
+        );
     }
 
     #[test]
     fn test_matching_bracket_curly() {
         let lines = vec!["{hello}"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(0, 6)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 6)), Some(Position::new(0, 0)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(0, 6))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 6)),
+            Some(Position::new(0, 0))
+        );
     }
 
     #[test]
     fn test_matching_bracket_angle() {
         let lines = vec!["<hello>"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(0, 6)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 6)), Some(Position::new(0, 0)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(0, 6))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 6)),
+            Some(Position::new(0, 0))
+        );
     }
 
     #[test]
     fn test_matching_bracket_nested() {
         let lines = vec!["((a))"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(0, 4)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 1)), Some(Position::new(0, 3)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(0, 4))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 1)),
+            Some(Position::new(0, 3))
+        );
     }
 
     #[test]
     fn test_matching_bracket_deep_nested() {
         let lines = vec!["(((a)))"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(0, 6)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 2)), Some(Position::new(0, 4)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(0, 6))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 2)),
+            Some(Position::new(0, 4))
+        );
     }
 
     #[test]
     fn test_matching_bracket_multiline() {
         let lines = vec!["(", "hello", ")"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(2, 0)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(2, 0))
+        );
     }
 
     #[test]
@@ -654,9 +694,18 @@ mod tests {
     #[test]
     fn test_matching_bracket_mixed_types() {
         let lines = vec!["({[]})"];
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 0)), Some(Position::new(0, 5)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 1)), Some(Position::new(0, 4)));
-        assert_eq!(find_matching_bracket(&lines, Position::new(0, 2)), Some(Position::new(0, 3)));
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 0)),
+            Some(Position::new(0, 5))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 1)),
+            Some(Position::new(0, 4))
+        );
+        assert_eq!(
+            find_matching_bracket(&lines, Position::new(0, 2)),
+            Some(Position::new(0, 3))
+        );
     }
 
     // ==================== Paragraph Tests ====================

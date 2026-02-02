@@ -1,7 +1,11 @@
 //! Clipboard utilities with HTML-to-Markdown conversion support
 
 use clipboard_rs::{Clipboard as ClipboardTrait, ClipboardContext, ContentFormat};
-use htmd::{Element, HtmlToMarkdown, element_handler::Handlers, options::{BulletListMarker, Options}};
+use htmd::{
+    element_handler::Handlers,
+    options::{BulletListMarker, Options},
+    Element, HtmlToMarkdown,
+};
 
 pub type ClipboardResult<T> = Result<T, ClipboardError>;
 
@@ -36,8 +40,8 @@ pub fn has_html() -> bool {
 }
 
 pub fn get_html() -> ClipboardResult<Option<String>> {
-    let ctx = ClipboardContext::new()
-        .map_err(|e| ClipboardError::ContextCreation(e.to_string()))?;
+    let ctx =
+        ClipboardContext::new().map_err(|e| ClipboardError::ContextCreation(e.to_string()))?;
 
     if !ctx.has(ContentFormat::Html) {
         return Ok(None);
@@ -49,8 +53,8 @@ pub fn get_html() -> ClipboardResult<Option<String>> {
 }
 
 pub fn get_text() -> ClipboardResult<Option<String>> {
-    let ctx = ClipboardContext::new()
-        .map_err(|e| ClipboardError::ContextCreation(e.to_string()))?;
+    let ctx =
+        ClipboardContext::new().map_err(|e| ClipboardError::ContextCreation(e.to_string()))?;
 
     ctx.get_text()
         .map(Some)
@@ -122,8 +126,7 @@ pub fn get_content_as_markdown() -> ClipboardResult<ClipboardContent> {
                         return Ok(ClipboardContent::Markdown(trimmed));
                     }
                 }
-                Err(_) => {
-                }
+                Err(_) => {}
             }
         }
     }

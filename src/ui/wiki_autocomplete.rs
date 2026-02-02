@@ -28,7 +28,9 @@ pub fn render_wiki_autocomplete(f: &mut Frame, app: &App) {
         let (cursor_row, cursor_col) = app.editor.cursor();
         let editor_area = app.editor_area;
         let border_offset = if app.zen_mode { 0 } else { 1 };
-        let cursor_screen_y = editor_area.y + border_offset + (cursor_row.saturating_sub(app.editor_scroll_top)) as u16;
+        let cursor_screen_y = editor_area.y
+            + border_offset
+            + (cursor_row.saturating_sub(app.editor_scroll_top)) as u16;
         let cursor_screen_x = editor_area.x + border_offset + cursor_col as u16;
 
         let is_alias_mode = *mode == WikiAutocompleteMode::Alias;
@@ -42,7 +44,11 @@ pub fn render_wiki_autocomplete(f: &mut Frame, app: &App) {
             let mut first_visible = *selected_index;
 
             for i in (0..=*selected_index).rev() {
-                let item_lines = if suggestions[i].folder_hint.is_some() { 2 } else { 1 };
+                let item_lines = if suggestions[i].folder_hint.is_some() {
+                    2
+                } else {
+                    1
+                };
                 if lines_used + item_lines > POPUP_MAX_VISIBLE_LINES {
                     break;
                 }
@@ -59,7 +65,11 @@ pub fn render_wiki_autocomplete(f: &mut Frame, app: &App) {
             let mut count = 0;
             let mut lines = 0;
             for suggestion in suggestions.iter().skip(scroll_offset) {
-                let item_lines = if suggestion.folder_hint.is_some() { 2 } else { 1 };
+                let item_lines = if suggestion.folder_hint.is_some() {
+                    2
+                } else {
+                    1
+                };
                 if lines + item_lines > POPUP_MAX_VISIBLE_LINES {
                     break;
                 }
@@ -102,7 +112,12 @@ pub fn render_wiki_autocomplete(f: &mut Frame, app: &App) {
             ])]
         } else {
             let mut lines = Vec::new();
-            for (idx, suggestion) in suggestions.iter().enumerate().skip(scroll_offset).take(visible_count) {
+            for (idx, suggestion) in suggestions
+                .iter()
+                .enumerate()
+                .skip(scroll_offset)
+                .take(visible_count)
+            {
                 let prefix = if suggestion.is_folder { "dir: " } else { "" };
                 let prefix_len = prefix.len();
                 let is_selected = idx == *selected_index;
@@ -116,7 +131,7 @@ pub fn render_wiki_autocomplete(f: &mut Frame, app: &App) {
                         .collect();
                     format!("{}…", truncated)
                 } else {
-                suggestion.display_name.clone()
+                    suggestion.display_name.clone()
                 };
 
                 let style = if is_selected {
@@ -155,21 +170,23 @@ pub fn render_wiki_autocomplete(f: &mut Frame, app: &App) {
 
                 if let Some(ref folder) = suggestion.folder_hint {
                     let hint_style = if is_selected {
-                        Style::default()
-                            .fg(theme.muted)
-                            .bg(theme.primary)
+                        Style::default().fg(theme.muted).bg(theme.primary)
                     } else {
                         Style::default().fg(theme.muted)
                     };
                     let hint_text = if folder.chars().count() > max_name_width.saturating_sub(2) {
-                        let truncated: String = folder.chars().take(max_name_width.saturating_sub(3)).collect();
+                        let truncated: String = folder
+                            .chars()
+                            .take(max_name_width.saturating_sub(3))
+                            .collect();
                         format!("  {}…", truncated)
                     } else {
                         format!("  {}", folder)
                     };
                     if is_selected {
                         let content_width = (popup_width as usize).saturating_sub(2);
-                        let padding_right = " ".repeat(content_width.saturating_sub(hint_text.chars().count()));
+                        let padding_right =
+                            " ".repeat(content_width.saturating_sub(hint_text.chars().count()));
                         lines.push(Line::from(vec![
                             Span::styled(hint_text, hint_style),
                             Span::styled(padding_right, Style::default().bg(theme.primary)),
@@ -210,7 +227,9 @@ pub fn render_wiki_autocomplete(f: &mut Frame, app: &App) {
 
         let hint = match mode {
             WikiAutocompleteMode::Alias => " Enter to close ".to_string(),
-            _ if !suggestions.is_empty() => format!(" {}/{} ", selected_index + 1, suggestions.len()),
+            _ if !suggestions.is_empty() => {
+                format!(" {}/{} ", selected_index + 1, suggestions.len())
+            }
             _ => " No matches ".to_string(),
         };
 

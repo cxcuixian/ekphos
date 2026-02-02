@@ -55,7 +55,8 @@ pub fn render_sidebar(f: &mut Frame, app: &mut App, area: Rect) {
 
     let is_searching = app.search_active && !app.search_query.is_empty();
 
-    let items: Vec<ListItem> = app.sidebar_items
+    let items: Vec<ListItem> = app
+        .sidebar_items
         .iter()
         .enumerate()
         .map(|(idx, item)| {
@@ -64,21 +65,27 @@ pub fn render_sidebar(f: &mut Frame, app: &mut App, area: Rect) {
 
             let is_cut = match (&app.cut_buffer, &item.kind) {
                 (Some(CutItem::Note { source_path, .. }), SidebarItemKind::Note { note_index }) => {
-                    app.notes.get(*note_index)
+                    app.notes
+                        .get(*note_index)
                         .and_then(|note| note.file_path.as_ref())
                         .map(|path| path == source_path)
                         .unwrap_or(false)
                 }
-                (Some(CutItem::Folder { source_path, .. }), SidebarItemKind::Folder { path, .. }) => {
-                    path == source_path
-                }
+                (
+                    Some(CutItem::Folder { source_path, .. }),
+                    SidebarItemKind::Folder { path, .. },
+                ) => path == source_path,
                 _ => false,
             };
 
             let (icon, mut style) = match &item.kind {
                 SidebarItemKind::Folder { expanded, .. } => {
                     let icon = if *expanded { "▼ " } else { "▶ " };
-                    let folder_color = if *expanded { sidebar_theme.folder_expanded } else { sidebar_theme.folder };
+                    let folder_color = if *expanded {
+                        sidebar_theme.folder_expanded
+                    } else {
+                        sidebar_theme.folder
+                    };
                     let style = if is_selected {
                         Style::default()
                             .fg(folder_color)
@@ -126,7 +133,8 @@ pub fn render_sidebar(f: &mut Frame, app: &mut App, area: Rect) {
         let total_count = app.notes.len();
         format!(" Found {}/{} ", match_count, total_count)
     } else {
-        let note_count = app.sidebar_items
+        let note_count = app
+            .sidebar_items
             .iter()
             .filter(|item| matches!(item.kind, SidebarItemKind::Note { .. }))
             .count();
@@ -164,7 +172,8 @@ fn render_collapsed_sidebar(f: &mut Frame, app: &mut App, area: Rect) {
         Style::default().fg(theme.border)
     };
 
-    let note_count = app.sidebar_items
+    let note_count = app
+        .sidebar_items
         .iter()
         .filter(|item| matches!(item.kind, SidebarItemKind::Note { .. }))
         .count();
@@ -186,12 +195,11 @@ fn render_collapsed_sidebar(f: &mut Frame, app: &mut App, area: Rect) {
         Style::default().fg(theme.foreground),
     )));
 
-    let collapsed = Paragraph::new(lines)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(border_style),
-        );
+    let collapsed = Paragraph::new(lines).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(border_style),
+    );
 
     f.render_widget(collapsed, area);
 }

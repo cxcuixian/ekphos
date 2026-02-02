@@ -17,15 +17,18 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, ContextMenuState, DialogState, SearchPickerState, Mode, WikiAutocompleteState};
+use crate::app::{
+    App, ContextMenuState, DialogState, Mode, SearchPickerState, WikiAutocompleteState,
+};
 
 pub use content::render_content;
 pub use dialogs::{
     render_create_folder_dialog, render_create_note_dialog, render_create_note_in_folder_dialog,
-    render_create_wiki_note_dialog, render_delete_confirm_dialog, render_delete_folder_confirm_dialog,
-    render_directory_not_found_dialog, render_empty_directory_dialog, render_help_dialog,
-    render_onboarding_dialog, render_rename_folder_dialog, render_rename_note_dialog,
-    render_unsaved_changes_dialog, render_welcome_dialog,
+    render_create_wiki_note_dialog, render_delete_confirm_dialog,
+    render_delete_folder_confirm_dialog, render_directory_not_found_dialog,
+    render_empty_directory_dialog, render_help_dialog, render_onboarding_dialog,
+    render_rename_folder_dialog, render_rename_note_dialog, render_unsaved_changes_dialog,
+    render_welcome_dialog,
 };
 pub use editor::render_editor;
 pub use outline::render_outline;
@@ -64,11 +67,7 @@ pub fn render(f: &mut Frame, app: &mut App) {
     // Create main layout with left sidebar, content, and right outline
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            sidebar_constraint,     
-            Constraint::Min(20),    
-            outline_constraint,    
-        ])
+        .constraints([sidebar_constraint, Constraint::Min(20), outline_constraint])
         .split(vertical_chunks[0]);
 
     // Render left sidebar (notes list)

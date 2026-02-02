@@ -60,7 +60,12 @@ pub fn render_search_dialog(f: &mut Frame, app: &App, content_area: Rect) {
     let input_line = Line::from(vec![
         Span::styled(" ", Style::default()),
         Span::styled(&display_query, Style::default().fg(theme.search.input)),
-        Span::styled(cursor, Style::default().fg(theme.primary).add_modifier(Modifier::SLOW_BLINK)),
+        Span::styled(
+            cursor,
+            Style::default()
+                .fg(theme.primary)
+                .add_modifier(Modifier::SLOW_BLINK),
+        ),
         Span::styled(" ", Style::default()),
     ]);
 
@@ -81,10 +86,13 @@ pub fn render_search_dialog(f: &mut Frame, app: &App, content_area: Rect) {
     let dialog = Paragraph::new(vec![input_line]).block(
         Block::default()
             .title(" Find ")
-            .title_bottom(Line::from(Span::styled(
-                &hint_text,
-                Style::default().fg(theme.search.match_count),
-            )).right_aligned())
+            .title_bottom(
+                Line::from(Span::styled(
+                    &hint_text,
+                    Style::default().fg(theme.search.match_count),
+                ))
+                .right_aligned(),
+            )
             .borders(Borders::ALL)
             .border_style(Style::default().fg(border_color))
             .style(Style::default().bg(theme.search.background)),

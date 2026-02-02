@@ -47,10 +47,7 @@ pub fn apply_force_directed_layout(
     let aspect_ratio = 2.2;
 
     // Pre-calculate text widths for text-aware spacing
-    let text_widths: Vec<f32> = nodes
-        .iter()
-        .map(|node| node.title.width() as f32)
-        .collect();
+    let text_widths: Vec<f32> = nodes.iter().map(|node| node.title.width() as f32).collect();
     let avg_text_width = text_widths.iter().sum::<f32>() / n as f32;
 
     // Calculate radius based on number of nodes - more nodes = larger circle

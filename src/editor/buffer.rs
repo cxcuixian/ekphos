@@ -23,7 +23,10 @@ impl TextBuffer {
         if lines.is_empty() {
             return Self::default();
         }
-        Self { before: lines, after: Vec::new() }
+        Self {
+            before: lines,
+            after: Vec::new(),
+        }
     }
 
     #[inline]
@@ -174,7 +177,13 @@ impl TextBuffer {
         self.before.pop()
     }
 
-    pub fn get_text_range(&self, start_row: usize, start_col: usize, end_row: usize, end_col: usize) -> String {
+    pub fn get_text_range(
+        &self,
+        start_row: usize,
+        start_col: usize,
+        end_row: usize,
+        end_col: usize,
+    ) -> String {
         if start_row == end_row {
             if let Some(line) = self.line(start_row) {
                 let chars: Vec<char> = line.chars().collect();
@@ -210,7 +219,13 @@ impl TextBuffer {
         result
     }
 
-    pub fn delete_text_range(&mut self, start_row: usize, start_col: usize, end_row: usize, end_col: usize) -> String {
+    pub fn delete_text_range(
+        &mut self,
+        start_row: usize,
+        start_col: usize,
+        end_row: usize,
+        end_col: usize,
+    ) -> String {
         let deleted = self.get_text_range(start_row, start_col, end_row, end_col);
 
         if start_row == end_row {
@@ -242,7 +257,10 @@ impl TextBuffer {
 }
 
 fn char_to_byte_index(s: &str, char_idx: usize) -> usize {
-    s.char_indices().nth(char_idx).map(|(i, _)| i).unwrap_or(s.len())
+    s.char_indices()
+        .nth(char_idx)
+        .map(|(i, _)| i)
+        .unwrap_or(s.len())
 }
 
 #[cfg(test)]

@@ -219,7 +219,10 @@ impl VimState {
     #[allow(dead_code)]
     pub fn enter_operator_pending(&mut self, op: Operator) {
         let count = self.count.take();
-        self.mode = VimMode::OperatorPending { operator: op, count };
+        self.mode = VimMode::OperatorPending {
+            operator: op,
+            count,
+        };
         self.recording_command = Some(RecordedCommand {
             operator: Some(op),
             count,
@@ -242,7 +245,11 @@ impl VimState {
 
     #[allow(dead_code)]
     pub fn enter_visual_mode(&mut self, line_wise: bool) {
-        self.mode = if line_wise { VimMode::VisualLine } else { VimMode::Visual };
+        self.mode = if line_wise {
+            VimMode::VisualLine
+        } else {
+            VimMode::Visual
+        };
         self.reset_pending();
     }
 
@@ -285,10 +292,18 @@ impl VimState {
             parts.push(format!("{}-", operator.char()));
         }
 
-        if self.pending_g { parts.push("g-".to_string()); }
-        if self.pending_z { parts.push("z-".to_string()); }
-        if self.pending_find.is_some() { parts.push("f-".to_string()); }
-        if self.awaiting_replace { parts.push("r-".to_string()); }
+        if self.pending_g {
+            parts.push("g-".to_string());
+        }
+        if self.pending_z {
+            parts.push("z-".to_string());
+        }
+        if self.pending_find.is_some() {
+            parts.push("f-".to_string());
+        }
+        if self.awaiting_replace {
+            parts.push("r-".to_string());
+        }
 
         if let Some(pending) = &self.pending_mark {
             parts.push(match pending {

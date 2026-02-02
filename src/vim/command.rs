@@ -88,7 +88,11 @@ fn parse_substitute(input: &str) -> Option<Command> {
         SubstituteFlags::default()
     };
 
-    Some(Command::Substitute { pattern, replacement, flags })
+    Some(Command::Substitute {
+        pattern,
+        replacement,
+        flags,
+    })
 }
 
 #[cfg(test)]

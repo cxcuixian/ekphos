@@ -74,7 +74,10 @@ impl TextObject {
                 let (open, close) = self.delimiters()?;
                 find_quote_bounds(lines, pos, scope, open, close)
             }
-            TextObject::Parentheses | TextObject::Brackets | TextObject::Braces | TextObject::AngleBrackets => {
+            TextObject::Parentheses
+            | TextObject::Brackets
+            | TextObject::Braces
+            | TextObject::AngleBrackets => {
                 let (open, close) = self.delimiters()?;
                 find_bracket_bounds(lines, pos, scope, open, close)
             }
@@ -111,7 +114,11 @@ fn find_word_bounds(
     let mut start = col;
     while start > 0 {
         let c = chars[start - 1];
-        let c_is_word = if big_word { !c.is_whitespace() } else { is_word_char(c) };
+        let c_is_word = if big_word {
+            !c.is_whitespace()
+        } else {
+            is_word_char(c)
+        };
         if c_is_word != is_word {
             break;
         }
@@ -121,7 +128,11 @@ fn find_word_bounds(
     let mut end = col;
     while end < chars.len() {
         let c = chars[end];
-        let c_is_word = if big_word { !c.is_whitespace() } else { is_word_char(c) };
+        let c_is_word = if big_word {
+            !c.is_whitespace()
+        } else {
+            is_word_char(c)
+        };
         if c_is_word != is_word {
             break;
         }
@@ -153,7 +164,10 @@ fn find_paragraph_bounds(
     let mut end_row = pos.row;
 
     while start_row > 0 {
-        if lines.get(start_row.saturating_sub(1)).map_or(true, |l| l.trim().is_empty()) {
+        if lines
+            .get(start_row.saturating_sub(1))
+            .map_or(true, |l| l.trim().is_empty())
+        {
             break;
         }
         start_row -= 1;
@@ -173,7 +187,9 @@ fn find_paragraph_bounds(
     }
 
     let end_col = if end_row > 0 && end_row <= lines.len() {
-        lines.get(end_row.saturating_sub(1)).map_or(0, |l| l.chars().count())
+        lines
+            .get(end_row.saturating_sub(1))
+            .map_or(0, |l| l.chars().count())
     } else {
         0
     };
@@ -221,8 +237,14 @@ fn find_quote_bounds(
     let (start, end) = found_pair.or(seek_pair)?;
 
     match scope {
-        TextObjectScope::Inner => Some((Position::new(pos.row, start + 1), Position::new(pos.row, end))),
-        TextObjectScope::Around => Some((Position::new(pos.row, start), Position::new(pos.row, end + 1))),
+        TextObjectScope::Inner => Some((
+            Position::new(pos.row, start + 1),
+            Position::new(pos.row, end),
+        )),
+        TextObjectScope::Around => Some((
+            Position::new(pos.row, start),
+            Position::new(pos.row, end + 1),
+        )),
     }
 }
 
@@ -311,7 +333,11 @@ fn find_bracket_bounds(
 
     loop {
         let line: Vec<char> = lines.get(search_row)?.chars().collect();
-        let start_col = if search_row == open_pos.row { search_col } else { 0 };
+        let start_col = if search_row == open_pos.row {
+            search_col
+        } else {
+            0
+        };
 
         for c in start_col..line.len() {
             let ch = line.get(c)?;
@@ -322,14 +348,12 @@ fn find_bracket_bounds(
                 if depth == 0 {
                     let close_pos = Position::new(search_row, c);
                     return match scope {
-                        TextObjectScope::Inner => Some((
-                            Position::new(open_pos.row, open_pos.col + 1),
-                            close_pos,
-                        )),
-                        TextObjectScope::Around => Some((
-                            open_pos,
-                            Position::new(close_pos.row, close_pos.col + 1),
-                        )),
+                        TextObjectScope::Inner => {
+                            Some((Position::new(open_pos.row, open_pos.col + 1), close_pos))
+                        }
+                        TextObjectScope::Around => {
+                            Some((open_pos, Position::new(close_pos.row, close_pos.col + 1)))
+                        }
                     };
                 }
             }
@@ -350,66 +374,162 @@ mod tests {
 
     #[test]
     fn test_parse_word() {
-        assert_eq!(TextObject::parse('i', 'w'), Some((TextObjectScope::Inner, TextObject::Word)));
-        assert_eq!(TextObject::parse('a', 'w'), Some((TextObjectScope::Around, TextObject::Word)));
+        assert_eq!(
+            TextObject::parse('i', 'w'),
+            Some((TextObjectScope::Inner, TextObject::Word))
+        );
+        assert_eq!(
+            TextObject::parse('a', 'w'),
+            Some((TextObjectScope::Around, TextObject::Word))
+        );
     }
 
     #[test]
     fn test_parse_big_word() {
-        assert_eq!(TextObject::parse('i', 'W'), Some((TextObjectScope::Inner, TextObject::BigWord)));
-        assert_eq!(TextObject::parse('a', 'W'), Some((TextObjectScope::Around, TextObject::BigWord)));
+        assert_eq!(
+            TextObject::parse('i', 'W'),
+            Some((TextObjectScope::Inner, TextObject::BigWord))
+        );
+        assert_eq!(
+            TextObject::parse('a', 'W'),
+            Some((TextObjectScope::Around, TextObject::BigWord))
+        );
     }
 
     #[test]
     fn test_parse_quotes() {
-        assert_eq!(TextObject::parse('i', '"'), Some((TextObjectScope::Inner, TextObject::DoubleQuote)));
-        assert_eq!(TextObject::parse('a', '"'), Some((TextObjectScope::Around, TextObject::DoubleQuote)));
-        assert_eq!(TextObject::parse('i', '\''), Some((TextObjectScope::Inner, TextObject::SingleQuote)));
-        assert_eq!(TextObject::parse('a', '\''), Some((TextObjectScope::Around, TextObject::SingleQuote)));
-        assert_eq!(TextObject::parse('i', '`'), Some((TextObjectScope::Inner, TextObject::BackQuote)));
-        assert_eq!(TextObject::parse('a', '`'), Some((TextObjectScope::Around, TextObject::BackQuote)));
+        assert_eq!(
+            TextObject::parse('i', '"'),
+            Some((TextObjectScope::Inner, TextObject::DoubleQuote))
+        );
+        assert_eq!(
+            TextObject::parse('a', '"'),
+            Some((TextObjectScope::Around, TextObject::DoubleQuote))
+        );
+        assert_eq!(
+            TextObject::parse('i', '\''),
+            Some((TextObjectScope::Inner, TextObject::SingleQuote))
+        );
+        assert_eq!(
+            TextObject::parse('a', '\''),
+            Some((TextObjectScope::Around, TextObject::SingleQuote))
+        );
+        assert_eq!(
+            TextObject::parse('i', '`'),
+            Some((TextObjectScope::Inner, TextObject::BackQuote))
+        );
+        assert_eq!(
+            TextObject::parse('a', '`'),
+            Some((TextObjectScope::Around, TextObject::BackQuote))
+        );
     }
 
     #[test]
     fn test_parse_parentheses() {
-        assert_eq!(TextObject::parse('i', '('), Some((TextObjectScope::Inner, TextObject::Parentheses)));
-        assert_eq!(TextObject::parse('a', '('), Some((TextObjectScope::Around, TextObject::Parentheses)));
-        assert_eq!(TextObject::parse('i', ')'), Some((TextObjectScope::Inner, TextObject::Parentheses)));
-        assert_eq!(TextObject::parse('a', ')'), Some((TextObjectScope::Around, TextObject::Parentheses)));
-        assert_eq!(TextObject::parse('i', 'b'), Some((TextObjectScope::Inner, TextObject::Parentheses)));
-        assert_eq!(TextObject::parse('a', 'b'), Some((TextObjectScope::Around, TextObject::Parentheses)));
+        assert_eq!(
+            TextObject::parse('i', '('),
+            Some((TextObjectScope::Inner, TextObject::Parentheses))
+        );
+        assert_eq!(
+            TextObject::parse('a', '('),
+            Some((TextObjectScope::Around, TextObject::Parentheses))
+        );
+        assert_eq!(
+            TextObject::parse('i', ')'),
+            Some((TextObjectScope::Inner, TextObject::Parentheses))
+        );
+        assert_eq!(
+            TextObject::parse('a', ')'),
+            Some((TextObjectScope::Around, TextObject::Parentheses))
+        );
+        assert_eq!(
+            TextObject::parse('i', 'b'),
+            Some((TextObjectScope::Inner, TextObject::Parentheses))
+        );
+        assert_eq!(
+            TextObject::parse('a', 'b'),
+            Some((TextObjectScope::Around, TextObject::Parentheses))
+        );
     }
 
     #[test]
     fn test_parse_brackets() {
-        assert_eq!(TextObject::parse('i', '['), Some((TextObjectScope::Inner, TextObject::Brackets)));
-        assert_eq!(TextObject::parse('a', '['), Some((TextObjectScope::Around, TextObject::Brackets)));
-        assert_eq!(TextObject::parse('i', ']'), Some((TextObjectScope::Inner, TextObject::Brackets)));
-        assert_eq!(TextObject::parse('a', ']'), Some((TextObjectScope::Around, TextObject::Brackets)));
+        assert_eq!(
+            TextObject::parse('i', '['),
+            Some((TextObjectScope::Inner, TextObject::Brackets))
+        );
+        assert_eq!(
+            TextObject::parse('a', '['),
+            Some((TextObjectScope::Around, TextObject::Brackets))
+        );
+        assert_eq!(
+            TextObject::parse('i', ']'),
+            Some((TextObjectScope::Inner, TextObject::Brackets))
+        );
+        assert_eq!(
+            TextObject::parse('a', ']'),
+            Some((TextObjectScope::Around, TextObject::Brackets))
+        );
     }
 
     #[test]
     fn test_parse_braces() {
-        assert_eq!(TextObject::parse('i', '{'), Some((TextObjectScope::Inner, TextObject::Braces)));
-        assert_eq!(TextObject::parse('a', '{'), Some((TextObjectScope::Around, TextObject::Braces)));
-        assert_eq!(TextObject::parse('i', '}'), Some((TextObjectScope::Inner, TextObject::Braces)));
-        assert_eq!(TextObject::parse('a', '}'), Some((TextObjectScope::Around, TextObject::Braces)));
-        assert_eq!(TextObject::parse('i', 'B'), Some((TextObjectScope::Inner, TextObject::Braces)));
-        assert_eq!(TextObject::parse('a', 'B'), Some((TextObjectScope::Around, TextObject::Braces)));
+        assert_eq!(
+            TextObject::parse('i', '{'),
+            Some((TextObjectScope::Inner, TextObject::Braces))
+        );
+        assert_eq!(
+            TextObject::parse('a', '{'),
+            Some((TextObjectScope::Around, TextObject::Braces))
+        );
+        assert_eq!(
+            TextObject::parse('i', '}'),
+            Some((TextObjectScope::Inner, TextObject::Braces))
+        );
+        assert_eq!(
+            TextObject::parse('a', '}'),
+            Some((TextObjectScope::Around, TextObject::Braces))
+        );
+        assert_eq!(
+            TextObject::parse('i', 'B'),
+            Some((TextObjectScope::Inner, TextObject::Braces))
+        );
+        assert_eq!(
+            TextObject::parse('a', 'B'),
+            Some((TextObjectScope::Around, TextObject::Braces))
+        );
     }
 
     #[test]
     fn test_parse_angle_brackets() {
-        assert_eq!(TextObject::parse('i', '<'), Some((TextObjectScope::Inner, TextObject::AngleBrackets)));
-        assert_eq!(TextObject::parse('a', '<'), Some((TextObjectScope::Around, TextObject::AngleBrackets)));
-        assert_eq!(TextObject::parse('i', '>'), Some((TextObjectScope::Inner, TextObject::AngleBrackets)));
-        assert_eq!(TextObject::parse('a', '>'), Some((TextObjectScope::Around, TextObject::AngleBrackets)));
+        assert_eq!(
+            TextObject::parse('i', '<'),
+            Some((TextObjectScope::Inner, TextObject::AngleBrackets))
+        );
+        assert_eq!(
+            TextObject::parse('a', '<'),
+            Some((TextObjectScope::Around, TextObject::AngleBrackets))
+        );
+        assert_eq!(
+            TextObject::parse('i', '>'),
+            Some((TextObjectScope::Inner, TextObject::AngleBrackets))
+        );
+        assert_eq!(
+            TextObject::parse('a', '>'),
+            Some((TextObjectScope::Around, TextObject::AngleBrackets))
+        );
     }
 
     #[test]
     fn test_parse_paragraph() {
-        assert_eq!(TextObject::parse('i', 'p'), Some((TextObjectScope::Inner, TextObject::Paragraph)));
-        assert_eq!(TextObject::parse('a', 'p'), Some((TextObjectScope::Around, TextObject::Paragraph)));
+        assert_eq!(
+            TextObject::parse('i', 'p'),
+            Some((TextObjectScope::Inner, TextObject::Paragraph))
+        );
+        assert_eq!(
+            TextObject::parse('a', 'p'),
+            Some((TextObjectScope::Around, TextObject::Paragraph))
+        );
     }
 
     #[test]
@@ -449,70 +569,80 @@ mod tests {
     #[test]
     fn test_find_word_bounds_inner() {
         let lines = vec!["hello world"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 5))));
     }
 
     #[test]
     fn test_find_word_bounds_around() {
         let lines = vec!["hello world"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 2));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 2));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 6))));
     }
 
     #[test]
     fn test_find_word_bounds_at_start() {
         let lines = vec!["hello world"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 5))));
     }
 
     #[test]
     fn test_find_word_bounds_at_end() {
         let lines = vec!["hello world"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 10));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 10));
         assert_eq!(bounds, Some((Position::new(0, 6), Position::new(0, 11))));
     }
 
     #[test]
     fn test_find_word_bounds_single_word() {
         let lines = vec!["hello"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 5))));
     }
 
     #[test]
     fn test_find_word_bounds_with_underscore() {
         let lines = vec!["hello_world test"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 5));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 5));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 11))));
     }
 
     #[test]
     fn test_find_word_bounds_punctuation() {
         let lines = vec!["foo.bar"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
         assert_eq!(bounds, Some((Position::new(0, 3), Position::new(0, 4))));
     }
 
     #[test]
     fn test_find_word_bounds_empty_line() {
         let lines = vec![""];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 0))));
     }
 
     #[test]
     fn test_find_word_bounds_around_trailing_space() {
         let lines = vec!["hello world"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 8));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 8));
         assert!(bounds.is_some());
     }
 
     #[test]
     fn test_find_word_bounds_around_leading_space() {
         let lines = vec!["hello world"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 10));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 10));
         assert!(bounds.is_some());
     }
 
@@ -521,21 +651,24 @@ mod tests {
     #[test]
     fn test_find_big_word_bounds_inner() {
         let lines = vec!["foo.bar baz"];
-        let bounds = TextObject::BigWord.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
+        let bounds =
+            TextObject::BigWord.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 7))));
     }
 
     #[test]
     fn test_find_big_word_bounds_around() {
         let lines = vec!["foo.bar baz"];
-        let bounds = TextObject::BigWord.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 2));
+        let bounds =
+            TextObject::BigWord.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 2));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 8))));
     }
 
     #[test]
     fn test_find_big_word_bounds_complex() {
         let lines = vec!["http://example.com next"];
-        let bounds = TextObject::BigWord.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 5));
+        let bounds =
+            TextObject::BigWord.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 5));
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 18))));
     }
 
@@ -544,56 +677,85 @@ mod tests {
     #[test]
     fn test_find_quote_bounds_inner() {
         let lines = vec!["say \"hello\" there"];
-        let bounds = TextObject::DoubleQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 6));
+        let bounds = TextObject::DoubleQuote.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 6),
+        );
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 10))));
     }
 
     #[test]
     fn test_find_quote_bounds_around() {
         let lines = vec!["say \"hello\" there"];
-        let bounds = TextObject::DoubleQuote.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 6));
+        let bounds = TextObject::DoubleQuote.find_bounds(
+            TextObjectScope::Around,
+            &lines,
+            Position::new(0, 6),
+        );
         assert_eq!(bounds, Some((Position::new(0, 4), Position::new(0, 11))));
     }
 
     #[test]
     fn test_find_quote_bounds_single_quote() {
         let lines = vec!["say 'hello' there"];
-        let bounds = TextObject::SingleQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 6));
+        let bounds = TextObject::SingleQuote.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 6),
+        );
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 10))));
     }
 
     #[test]
     fn test_find_quote_bounds_backtick() {
         let lines = vec!["say `hello` there"];
-        let bounds = TextObject::BackQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 6));
+        let bounds =
+            TextObject::BackQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 6));
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 10))));
     }
 
     #[test]
     fn test_find_quote_bounds_empty_quotes() {
         let lines = vec!["say \"\" there"];
-        let bounds = TextObject::DoubleQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 5));
+        let bounds = TextObject::DoubleQuote.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 5),
+        );
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 5))));
     }
 
     #[test]
     fn test_find_quote_bounds_at_quote_char() {
         let lines = vec!["say \"hello\" there"];
-        let bounds = TextObject::DoubleQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 4));
+        let bounds = TextObject::DoubleQuote.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 4),
+        );
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 10))));
     }
 
     #[test]
     fn test_find_quote_bounds_no_quotes() {
         let lines = vec!["say hello there"];
-        let bounds = TextObject::DoubleQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 6));
+        let bounds = TextObject::DoubleQuote.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 6),
+        );
         assert_eq!(bounds, None);
     }
 
     #[test]
     fn test_find_quote_bounds_unmatched_quote() {
         let lines = vec!["say \"hello there"];
-        let bounds = TextObject::DoubleQuote.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 6));
+        let bounds = TextObject::DoubleQuote.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 6),
+        );
         assert_eq!(bounds, None);
     }
 
@@ -602,154 +764,230 @@ mod tests {
     #[test]
     fn test_find_bracket_bounds_inner() {
         let lines = vec!["(hello)"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 3),
+        );
         assert_eq!(bounds, Some((Position::new(0, 1), Position::new(0, 6))));
     }
 
     #[test]
     fn test_find_bracket_bounds_around() {
         let lines = vec!["(hello)"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 3));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Around,
+            &lines,
+            Position::new(0, 3),
+        );
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(0, 7))));
     }
 
     #[test]
     fn test_find_bracket_bounds_square() {
         let lines = vec!["[hello]"];
-        let bounds = TextObject::Brackets.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
+        let bounds =
+            TextObject::Brackets.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
         assert_eq!(bounds, Some((Position::new(0, 1), Position::new(0, 6))));
     }
 
     #[test]
     fn test_find_bracket_bounds_curly() {
         let lines = vec!["{hello}"];
-        let bounds = TextObject::Braces.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
+        let bounds =
+            TextObject::Braces.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
         assert_eq!(bounds, Some((Position::new(0, 1), Position::new(0, 6))));
     }
 
     #[test]
     fn test_find_bracket_bounds_angle() {
         let lines = vec!["<hello>"];
-        let bounds = TextObject::AngleBrackets.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
+        let bounds = TextObject::AngleBrackets.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 3),
+        );
         assert_eq!(bounds, Some((Position::new(0, 1), Position::new(0, 6))));
     }
 
     #[test]
     fn test_find_bracket_bounds_nested() {
         let lines = vec!["((inner))"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 3),
+        );
         assert_eq!(bounds, Some((Position::new(0, 2), Position::new(0, 7))));
     }
 
     #[test]
     fn test_find_bracket_bounds_deeply_nested() {
         let lines = vec!["(((deep)))"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 4));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 4),
+        );
         assert_eq!(bounds, Some((Position::new(0, 3), Position::new(0, 7))));
     }
 
     #[test]
     fn test_find_bracket_bounds_multiline() {
         let lines = vec!["(", "  hello", ")"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(1, 3));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(1, 3),
+        );
         assert_eq!(bounds, Some((Position::new(0, 1), Position::new(2, 0))));
     }
 
     #[test]
     fn test_find_bracket_bounds_multiline_around() {
         let lines = vec!["(", "  hello", ")"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Around, &lines, Position::new(1, 3));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Around,
+            &lines,
+            Position::new(1, 3),
+        );
         assert_eq!(bounds, Some((Position::new(0, 0), Position::new(2, 1))));
     }
 
     #[test]
     fn test_find_bracket_bounds_empty() {
         let lines = vec!["()"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 0),
+        );
         assert_eq!(bounds, Some((Position::new(0, 1), Position::new(0, 1))));
     }
 
     #[test]
     fn test_find_bracket_bounds_at_open_bracket() {
         let lines = vec!["(hello)"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 0),
+        );
         assert_eq!(bounds, Some((Position::new(0, 1), Position::new(0, 6))));
     }
 
     #[test]
     fn test_find_bracket_bounds_unmatched() {
         let lines = vec!["(hello"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 3));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 3),
+        );
         assert_eq!(bounds, None);
     }
 
     #[test]
     fn test_find_bracket_bounds_no_brackets() {
         let lines = vec!["hello"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 2),
+        );
         assert_eq!(bounds, None);
     }
 
     #[test]
     fn test_find_bracket_bounds_seek_forward_parentheses() {
         let lines = vec!["foo (bar)"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 0),
+        );
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 8))));
     }
 
     #[test]
     fn test_find_bracket_bounds_seek_forward_braces() {
         let lines = vec!["foo {bar}"];
-        let bounds = TextObject::Braces.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Braces.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 8))));
     }
 
     #[test]
     fn test_find_bracket_bounds_seek_forward_brackets() {
         let lines = vec!["foo [bar]"];
-        let bounds = TextObject::Brackets.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Brackets.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 8))));
     }
 
     #[test]
     fn test_find_bracket_bounds_seek_forward_angle() {
         let lines = vec!["foo <bar>"];
-        let bounds = TextObject::AngleBrackets.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds = TextObject::AngleBrackets.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 0),
+        );
         assert_eq!(bounds, Some((Position::new(0, 5), Position::new(0, 8))));
     }
 
     #[test]
     fn test_find_bracket_bounds_seek_forward_around() {
         let lines = vec!["foo (bar)"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 0));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Around,
+            &lines,
+            Position::new(0, 0),
+        );
         assert_eq!(bounds, Some((Position::new(0, 4), Position::new(0, 9))));
     }
 
     #[test]
     fn test_find_bracket_bounds_seek_mid_line() {
         let lines = vec!["foo bar (baz)"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 2));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 2),
+        );
         assert_eq!(bounds, Some((Position::new(0, 9), Position::new(0, 12))));
     }
 
     #[test]
     fn test_find_bracket_bounds_cursor_after_closed_pair() {
         let lines = vec!["(foo) (bar)"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 5));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 5),
+        );
         assert_eq!(bounds, Some((Position::new(0, 7), Position::new(0, 10))));
     }
 
     #[test]
     fn test_find_bracket_bounds_cursor_after_only_pair() {
         let lines = vec!["(foo) bar"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 6));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 6),
+        );
         assert_eq!(bounds, None);
     }
 
     #[test]
     fn test_find_bracket_bounds_complex_code() {
         let lines = vec!["fn test(a: (i32, i32)) {"];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 12));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(0, 12),
+        );
         assert_eq!(bounds, Some((Position::new(0, 12), Position::new(0, 20))));
     }
 
@@ -758,12 +996,16 @@ mod tests {
         // Regression test: unmatched brackets on previous lines should not
         // interfere with bracket matching on current line
         let lines = vec![
-            "abc()",                           // line 0: matched
-            "text with unmatched ( paren",     // line 1: unmatched opening
-            "abc(...)",                        // line 2: should still work!
+            "abc()",                       // line 0: matched
+            "text with unmatched ( paren", // line 1: unmatched opening
+            "abc(...)",                    // line 2: should still work!
         ];
         // Cursor at start of line 2, should seek forward to find abc(...)
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(2, 0));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(2, 0),
+        );
         assert_eq!(bounds, Some((Position::new(2, 4), Position::new(2, 7))));
     }
 
@@ -772,11 +1014,15 @@ mod tests {
         // An unmatched opening bracket should not match with a closing bracket
         // from a different pair on a later line
         let lines = vec![
-            "unmatched (",                     // line 0: unmatched opening
-            "abc(foo)",                        // line 1: complete pair
+            "unmatched (", // line 0: unmatched opening
+            "abc(foo)",    // line 1: complete pair
         ];
         // Cursor inside abc(foo), should find that pair, not the unmatched one
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(1, 5));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(1, 5),
+        );
         assert_eq!(bounds, Some((Position::new(1, 4), Position::new(1, 7))));
     }
 
@@ -784,12 +1030,16 @@ mod tests {
     fn test_find_bracket_bounds_multiple_unmatched() {
         // Multiple unmatched brackets on different lines
         let lines = vec![
-            "( unmatched",                     // line 0
-            "another ( unmatched",             // line 1
-            "",                                // line 2
-            "valid(content)",                  // line 3
+            "( unmatched",         // line 0
+            "another ( unmatched", // line 1
+            "",                    // line 2
+            "valid(content)",      // line 3
         ];
-        let bounds = TextObject::Parentheses.find_bounds(TextObjectScope::Inner, &lines, Position::new(3, 7));
+        let bounds = TextObject::Parentheses.find_bounds(
+            TextObjectScope::Inner,
+            &lines,
+            Position::new(3, 7),
+        );
         assert_eq!(bounds, Some((Position::new(3, 6), Position::new(3, 13))));
     }
 
@@ -798,7 +1048,8 @@ mod tests {
     #[test]
     fn test_find_paragraph_bounds_inner() {
         let lines = vec!["line1", "line2", "", "line3"];
-        let bounds = TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
         assert!(bounds.is_some());
         let (start, end) = bounds.unwrap();
         assert_eq!(start.row, 0);
@@ -808,28 +1059,32 @@ mod tests {
     #[test]
     fn test_find_paragraph_bounds_around() {
         let lines = vec!["line1", "line2", "", "line3"];
-        let bounds = TextObject::Paragraph.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Paragraph.find_bounds(TextObjectScope::Around, &lines, Position::new(0, 0));
         assert!(bounds.is_some());
     }
 
     #[test]
     fn test_find_paragraph_bounds_single_line() {
         let lines = vec!["only line"];
-        let bounds = TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
         assert!(bounds.is_some());
     }
 
     #[test]
     fn test_find_paragraph_bounds_at_empty_line() {
         let lines = vec!["line1", "", "line2"];
-        let bounds = TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(1, 0));
+        let bounds =
+            TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(1, 0));
         assert!(bounds.is_some());
     }
 
     #[test]
     fn test_find_paragraph_bounds_multiple_paragraphs() {
         let lines = vec!["para1", "", "para2", "para2cont", "", "para3"];
-        let bounds = TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(2, 0));
+        let bounds =
+            TextObject::Paragraph.find_bounds(TextObjectScope::Inner, &lines, Position::new(2, 0));
         assert!(bounds.is_some());
     }
 
@@ -838,28 +1093,32 @@ mod tests {
     #[test]
     fn test_find_bounds_empty_lines() {
         let lines: Vec<&str> = vec![];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 0));
         assert_eq!(bounds, None);
     }
 
     #[test]
     fn test_find_bounds_row_out_of_bounds() {
         let lines = vec!["hello"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(10, 0));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(10, 0));
         assert_eq!(bounds, None);
     }
 
     #[test]
     fn test_find_bounds_col_beyond_line() {
         let lines = vec!["hello"];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 100));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 100));
         assert!(bounds.is_some());
     }
 
     #[test]
     fn test_find_bounds_whitespace_only() {
         let lines = vec!["   "];
-        let bounds = TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 1));
+        let bounds =
+            TextObject::Word.find_bounds(TextObjectScope::Inner, &lines, Position::new(0, 1));
         assert!(bounds.is_some());
     }
 

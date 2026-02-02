@@ -17,7 +17,7 @@ use crate::graph::apply_force_directed_layout;
 // Node is a small square: 3 wide, 2 tall (looks square in terminal)
 const NODE_WIDTH: u16 = 3;
 const NODE_HEIGHT: u16 = 2;
-const LABEL_OFFSET: i32 = 1;  // Gap between node and label
+const LABEL_OFFSET: i32 = 1; // Gap between node and label
 
 pub fn render_graph_view(f: &mut Frame, app: &mut App) {
     let area = f.area();
@@ -106,20 +106,21 @@ pub fn render_graph_view(f: &mut Frame, app: &mut App) {
     let show_labels = zoom >= 0.15;
 
     // Build set of connected nodes for dimming effect
-    let connected_nodes: std::collections::HashSet<usize> = if let Some(selected) = app.graph_view.selected_node {
-        let mut connected = std::collections::HashSet::new();
-        connected.insert(selected);
-        for edge in &app.graph_view.edges {
-            if edge.from == selected {
-                connected.insert(edge.to);
-            } else if edge.to == selected {
-                connected.insert(edge.from);
+    let connected_nodes: std::collections::HashSet<usize> =
+        if let Some(selected) = app.graph_view.selected_node {
+            let mut connected = std::collections::HashSet::new();
+            connected.insert(selected);
+            for edge in &app.graph_view.edges {
+                if edge.from == selected {
+                    connected.insert(edge.to);
+                } else if edge.to == selected {
+                    connected.insert(edge.from);
+                }
             }
-        }
-        connected
-    } else {
-        std::collections::HashSet::new()
-    };
+            connected
+        } else {
+            std::collections::HashSet::new()
+        };
     let has_selection = app.graph_view.selected_node.is_some();
 
     // Layer 1: Draw dimmed edges first (not connected to selected node)
@@ -128,7 +129,9 @@ pub fn render_graph_view(f: &mut Frame, app: &mut App) {
             continue;
         }
 
-        let is_selected_edge = app.graph_view.selected_node
+        let is_selected_edge = app
+            .graph_view
+            .selected_node
             .map(|sel| edge.from == sel || edge.to == sel)
             .unwrap_or(false);
 
@@ -155,7 +158,16 @@ pub fn render_graph_view(f: &mut Frame, app: &mut App) {
             theme.border
         };
 
-        draw_line(buf, from_center_x, from_center_y, to_center_x, to_center_y, edge_color, inner, false);
+        draw_line(
+            buf,
+            from_center_x,
+            from_center_y,
+            to_center_x,
+            to_center_y,
+            edge_color,
+            inner,
+            false,
+        );
     }
 
     // Layer 2: Draw dimmed nodes (not connected to selected)
@@ -176,7 +188,17 @@ pub fn render_graph_view(f: &mut Frame, app: &mut App) {
             continue;
         }
 
-        render_node(buf, node, screen_x, screen_y, false, true, show_labels, theme, inner);
+        render_node(
+            buf,
+            node,
+            screen_x,
+            screen_y,
+            false,
+            true,
+            show_labels,
+            theme,
+            inner,
+        );
     }
 
     // Layer 3: Draw highlighted edges (connected to selected node) on top
@@ -185,7 +207,9 @@ pub fn render_graph_view(f: &mut Frame, app: &mut App) {
             continue;
         }
 
-        let is_selected_edge = app.graph_view.selected_node
+        let is_selected_edge = app
+            .graph_view
+            .selected_node
             .map(|sel| edge.from == sel || edge.to == sel)
             .unwrap_or(false);
 
@@ -205,7 +229,16 @@ pub fn render_graph_view(f: &mut Frame, app: &mut App) {
         let to_center_x = to_screen_x + NODE_WIDTH as i32 / 2;
         let to_center_y = to_screen_y + NODE_HEIGHT as i32 / 2;
 
-        draw_line(buf, from_center_x, from_center_y, to_center_x, to_center_y, theme.primary, inner, true);
+        draw_line(
+            buf,
+            from_center_x,
+            from_center_y,
+            to_center_x,
+            to_center_y,
+            theme.primary,
+            inner,
+            true,
+        );
     }
 
     // Layer 4: Draw connected and selected nodes on top
@@ -229,7 +262,17 @@ pub fn render_graph_view(f: &mut Frame, app: &mut App) {
         let is_selected = app.graph_view.selected_node == Some(idx);
         // Always show label for selected node, otherwise respect zoom-based visibility
         let node_show_label = show_labels || is_selected;
-        render_node(buf, node, screen_x, screen_y, is_selected, false, node_show_label, theme, inner);
+        render_node(
+            buf,
+            node,
+            screen_x,
+            screen_y,
+            is_selected,
+            false,
+            node_show_label,
+            theme,
+            inner,
+        );
     }
 
     render_help_bar(f, app, area);
@@ -327,8 +370,11 @@ fn render_node(
     for dx in 0..NODE_WIDTH as i32 {
         let px = screen_x + dx;
         let py = screen_y;
-        if px >= clip.x as i32 && px < (clip.x + clip.width) as i32
-            && py >= clip.y as i32 && py < (clip.y + clip.height) as i32 {
+        if px >= clip.x as i32
+            && px < (clip.x + clip.width) as i32
+            && py >= clip.y as i32
+            && py < (clip.y + clip.height) as i32
+        {
             if let Some(cell) = buf.cell_mut((px as u16, py as u16)) {
                 cell.set_char(top_chars[dx as usize]);
                 cell.set_fg(node_color);
@@ -340,8 +386,11 @@ fn render_node(
     for dx in 0..NODE_WIDTH as i32 {
         let px = screen_x + dx;
         let py = screen_y + 1;
-        if px >= clip.x as i32 && px < (clip.x + clip.width) as i32
-            && py >= clip.y as i32 && py < (clip.y + clip.height) as i32 {
+        if px >= clip.x as i32
+            && px < (clip.x + clip.width) as i32
+            && py >= clip.y as i32
+            && py < (clip.y + clip.height) as i32
+        {
             if let Some(cell) = buf.cell_mut((px as u16, py as u16)) {
                 cell.set_char(bot_chars[dx as usize]);
                 cell.set_fg(node_color);
@@ -396,7 +445,12 @@ fn render_help_bar(f: &mut Frame, app: &App, area: Rect) {
         Span::styled(": close", Style::default().fg(theme.muted)),
     ]);
 
-    let hint_area = Rect::new(area.x + 2, area.y + area.height - 2, area.width.saturating_sub(4), 1);
+    let hint_area = Rect::new(
+        area.x + 2,
+        area.y + area.height - 2,
+        area.width.saturating_sub(4),
+        1,
+    );
     f.render_widget(Paragraph::new(hint), hint_area);
 }
 
@@ -420,4 +474,3 @@ fn graph_bounds(nodes: &[crate::app::GraphNode]) -> (f32, f32, f32, f32) {
     }
     (min_x, min_y, max_x, max_y)
 }
-

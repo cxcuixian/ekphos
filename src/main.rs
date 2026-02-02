@@ -17,7 +17,10 @@ use std::path::PathBuf;
 
 use crossterm::{
     cursor::SetCursorStyle,
-    event::{DisableBracketedPaste, DisableFocusChange, DisableMouseCapture, EnableBracketedPaste, EnableFocusChange, EnableMouseCapture},
+    event::{
+        DisableBracketedPaste, DisableFocusChange, DisableMouseCapture, EnableBracketedPaste,
+        EnableFocusChange, EnableMouseCapture,
+    },
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -86,10 +89,16 @@ fn reset_config_and_themes() {
     let _config = config::Config::load_or_create();
 
     println!("  Created: {}", config_path.display());
-    println!("  Created: {}", themes_dir.join("ekphos-dawn.toml").display());
+    println!(
+        "  Created: {}",
+        themes_dir.join("ekphos-dawn.toml").display()
+    );
 
     println!();
-    println!("Reset complete! Configuration restored to v{} defaults.", VERSION);
+    println!(
+        "Reset complete! Configuration restored to v{} defaults.",
+        VERSION
+    );
 }
 
 fn clean_cache() {
@@ -159,7 +168,7 @@ fn resolve_path(path_str: &str) -> Option<PathBuf> {
 fn main() -> io::Result<()> {
     // Handle CLI arguments
     let args: Vec<String> = env::args().collect();
-    let mut initial_path: Option<PathBuf> = None;
+    let initial_path: Option<PathBuf>;
 
     if args.len() > 1 {
         match args[1].as_str() {
@@ -193,28 +202,36 @@ fn main() -> io::Result<()> {
                 eprintln!("Run 'ekphos --help' for usage information");
                 return Ok(());
             }
-            path_arg => {
-                match resolve_path(path_arg) {
-                    Some(path) => {
-                        if !path.exists() {
-                            eprintln!("Path does not exist: {}", path.display());
-                            return Ok(());
-                        }
-                        initial_path = Some(path);
-                    }
-                    None => {
-                        eprintln!("Invalid path: {}", path_arg);
+            path_arg => match resolve_path(path_arg) {
+                Some(path) => {
+                    if !path.exists() {
+                        eprintln!("Path does not exist: {}", path.display());
                         return Ok(());
                     }
+                    initial_path = Some(path);
                 }
-            }
+                None => {
+                    eprintln!("Invalid path: {}", path_arg);
+                    return Ok(());
+                }
+            },
         }
+    } else {
+        // No arguments: default to current working directory
+        initial_path = env::current_dir().ok();
     }
 
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste, EnableFocusChange, SetCursorStyle::SteadyBlock)?;
+    execute!(
+        stdout,
+        EnterAlternateScreen,
+        EnableMouseCapture,
+        EnableBracketedPaste,
+        EnableFocusChange,
+        SetCursorStyle::SteadyBlock
+    )?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 

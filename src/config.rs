@@ -57,11 +57,21 @@ pub struct EditorConfig {
     pub scrolloff: u8,
 }
 
-fn default_line_wrap() -> bool { true }
-fn default_tab_width() -> u16 { 4 }
-fn default_left_padding() -> u16 { 0 }
-fn default_right_padding() -> u16 { 1 }
-fn default_scrolloff() -> u8 { 0 }
+fn default_line_wrap() -> bool {
+    true
+}
+fn default_tab_width() -> u16 {
+    4
+}
+fn default_left_padding() -> u16 {
+    0
+}
+fn default_right_padding() -> u16 {
+    1
+}
+fn default_scrolloff() -> u8 {
+    0
+}
 
 impl Default for EditorConfig {
     fn default() -> Self {
@@ -76,16 +86,36 @@ impl Default for EditorConfig {
     }
 }
 
-fn default_notes_dir() -> String { "~/Documents/ekphos".to_string() }
-fn default_welcome_shown() -> bool { true }
-fn default_show_empty_dir() -> bool { true }
-fn default_theme_name() -> String { "ekphos-dawn".to_string() }
-fn default_syntax_theme() -> String { "base16-ocean.dark".to_string() }
-fn default_sidebar_collapsed() -> bool { false }
-fn default_outline_collapsed() -> bool { false }
-fn default_folders_first() -> bool { true }
-fn default_frontmatter_hidden() -> bool { true }
-fn default_show_tags() -> bool { true }
+fn default_notes_dir() -> String {
+    "~/Documents/ekphos".to_string()
+}
+fn default_welcome_shown() -> bool {
+    true
+}
+fn default_show_empty_dir() -> bool {
+    true
+}
+fn default_theme_name() -> String {
+    "ekphos-dawn".to_string()
+}
+fn default_syntax_theme() -> String {
+    "base16-ocean.dark".to_string()
+}
+fn default_sidebar_collapsed() -> bool {
+    false
+}
+fn default_outline_collapsed() -> bool {
+    false
+}
+fn default_folders_first() -> bool {
+    true
+}
+fn default_frontmatter_hidden() -> bool {
+    true
+}
+fn default_show_tags() -> bool {
+    true
+}
 
 impl Default for Config {
     fn default() -> Self {
@@ -106,7 +136,9 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn exists() -> bool { Self::config_path().exists() }
+    pub fn exists() -> bool {
+        Self::config_path().exists()
+    }
 
     pub fn load() -> Self {
         let config_path = Self::config_path();
@@ -127,8 +159,12 @@ impl Config {
         let config_path = Self::config_path();
         let themes_dir = Self::themes_dir();
 
-        if !config_dir.exists() { let _ = fs::create_dir_all(&config_dir); }
-        if !themes_dir.exists() { let _ = fs::create_dir_all(&themes_dir); }
+        if !config_dir.exists() {
+            let _ = fs::create_dir_all(&config_dir);
+        }
+        if !themes_dir.exists() {
+            let _ = fs::create_dir_all(&themes_dir);
+        }
 
         let default_theme_path = themes_dir.join("ekphos-dawn.toml");
         if !default_theme_path.exists() {
@@ -145,14 +181,18 @@ impl Config {
         Self::load()
     }
 
-    pub fn config_path() -> PathBuf { Self::config_dir().join("config.toml") }
+    pub fn config_path() -> PathBuf {
+        Self::config_dir().join("config.toml")
+    }
     pub fn config_dir() -> PathBuf {
         dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join(".config")
             .join("ekphos")
     }
-    pub fn themes_dir() -> PathBuf { Self::config_dir().join("themes") }
+    pub fn themes_dir() -> PathBuf {
+        Self::config_dir().join("themes")
+    }
 
     pub fn save(&self) -> std::io::Result<()> {
         let config_dir = Self::config_dir();
@@ -377,21 +417,51 @@ pub struct EditorColors {
 
 // Default color values module
 mod defaults {
-    pub fn background() -> String { "#1a1a24".to_string() }
-    pub fn background_secondary() -> String { "#24243a".to_string() }
-    pub fn foreground() -> String { "#c0caf5".to_string() }
-    pub fn muted() -> String { "#565f89".to_string() }
-    pub fn primary() -> String { "#7aa2f7".to_string() }
-    pub fn secondary() -> String { "#bb9af7".to_string() }
-    pub fn error() -> String { "#f7768e".to_string() }
-    pub fn warning() -> String { "#e0af68".to_string() }
-    pub fn success() -> String { "#9ece6a".to_string() }
-    pub fn info() -> String { "#7dcfff".to_string() }
-    pub fn border() -> String { "#3b4261".to_string() }
-    pub fn border_focused() -> String { "#7aa2f7".to_string() }
-    pub fn selection() -> String { "#283457".to_string() }
-    pub fn cursor() -> String { "#c0caf5".to_string() }
-    pub fn search_match_current() -> String { "#ff9e64".to_string() }
+    pub fn background() -> String {
+        "#1a1a24".to_string()
+    }
+    pub fn background_secondary() -> String {
+        "#24243a".to_string()
+    }
+    pub fn foreground() -> String {
+        "#c0caf5".to_string()
+    }
+    pub fn muted() -> String {
+        "#565f89".to_string()
+    }
+    pub fn primary() -> String {
+        "#7aa2f7".to_string()
+    }
+    pub fn secondary() -> String {
+        "#bb9af7".to_string()
+    }
+    pub fn error() -> String {
+        "#f7768e".to_string()
+    }
+    pub fn warning() -> String {
+        "#e0af68".to_string()
+    }
+    pub fn success() -> String {
+        "#9ece6a".to_string()
+    }
+    pub fn info() -> String {
+        "#7dcfff".to_string()
+    }
+    pub fn border() -> String {
+        "#3b4261".to_string()
+    }
+    pub fn border_focused() -> String {
+        "#7aa2f7".to_string()
+    }
+    pub fn selection() -> String {
+        "#283457".to_string()
+    }
+    pub fn cursor() -> String {
+        "#c0caf5".to_string()
+    }
+    pub fn search_match_current() -> String {
+        "#ff9e64".to_string()
+    }
 }
 
 impl Default for BaseColors {
@@ -407,7 +477,10 @@ impl Default for BaseColors {
 
 impl Default for AccentColors {
     fn default() -> Self {
-        Self { primary: defaults::primary(), secondary: defaults::secondary() }
+        Self {
+            primary: defaults::primary(),
+            secondary: defaults::secondary(),
+        }
     }
 }
 
@@ -791,7 +864,10 @@ impl Default for Theme {
 }
 
 fn parse_hex_color(hex: &str) -> Color {
-    let hex = hex.trim_start_matches('#').trim_start_matches('\'').trim_end_matches('\'');
+    let hex = hex
+        .trim_start_matches('#')
+        .trim_start_matches('\'')
+        .trim_end_matches('\'');
     if hex.len() == 6 {
         if let (Ok(r), Ok(g), Ok(b)) = (
             u8::from_str_radix(&hex[0..2], 16),

@@ -65,7 +65,7 @@ pub fn render_editor(f: &mut Frame, app: &mut App, area: Rect) {
                 for row in scroll_top..cursor_row {
                     visual_row += app.editor.line_wrapped_height(row);
                     if visual_row >= inner_height {
-                        break; 
+                        break;
                     }
                 }
                 visual_row += wrap_row_offset;
@@ -73,7 +73,10 @@ pub fn render_editor(f: &mut Frame, app: &mut App, area: Rect) {
                 if visual_row < inner_height {
                     let screen_y = editor_area.y + y_offset + visual_row as u16;
                     let screen_x = editor_area.x + x_offset + content_left_offset + wrap_col as u16;
-                    let max_x = editor_area.x + editor_area.width.saturating_sub(if app.zen_mode { 0 } else { 1 });
+                    let max_x = editor_area.x
+                        + editor_area
+                            .width
+                            .saturating_sub(if app.zen_mode { 0 } else { 1 });
                     if screen_x < max_x {
                         f.set_cursor_position((screen_x, screen_y));
                     }
@@ -85,9 +88,13 @@ pub fn render_editor(f: &mut Frame, app: &mut App, area: Rect) {
                     let display_col = app.editor.cursor_display_col();
                     let h_scroll_display = app.editor.h_scroll_display_offset();
                     let adjusted_col = display_col.saturating_sub(h_scroll_display);
-                    let screen_x = editor_area.x + x_offset + content_left_offset + adjusted_col as u16;
+                    let screen_x =
+                        editor_area.x + x_offset + content_left_offset + adjusted_col as u16;
 
-                    let max_x = editor_area.x + editor_area.width.saturating_sub(if app.zen_mode { 0 } else { 1 });
+                    let max_x = editor_area.x
+                        + editor_area
+                            .width
+                            .saturating_sub(if app.zen_mode { 0 } else { 1 });
                     if screen_x < max_x {
                         f.set_cursor_position((screen_x, screen_y));
                     }
@@ -111,15 +118,17 @@ pub fn render_editor(f: &mut Frame, app: &mut App, area: Rect) {
             let y = editor_area.y + y_offset + (cursor_row - scroll_top) as u16;
 
             if has_left_overflow {
-                let indicator = Paragraph::new("«│")
-                    .style(Style::default().fg(theme.warning));
-                let x = if app.zen_mode { editor_area.x } else { editor_area.x + 1 };
+                let indicator = Paragraph::new("«│").style(Style::default().fg(theme.warning));
+                let x = if app.zen_mode {
+                    editor_area.x
+                } else {
+                    editor_area.x + 1
+                };
                 f.render_widget(indicator, Rect::new(x, y, 2, 1));
             }
 
             if has_right_overflow {
-                let indicator = Paragraph::new("│»")
-                    .style(Style::default().fg(theme.warning));
+                let indicator = Paragraph::new("│»").style(Style::default().fg(theme.warning));
                 let x = if app.zen_mode {
                     editor_area.x + editor_area.width - 2
                 } else {
@@ -168,9 +177,7 @@ fn render_zen_status_line(f: &mut Frame, app: &App, area: Rect) {
             (None, VimMode::Normal) => theme.primary,
             (None, VimMode::Insert) => theme.success,
             (None, VimMode::Replace) => theme.warning,
-            (None, VimMode::Visual | VimMode::VisualLine | VimMode::VisualBlock) => {
-                theme.secondary
-            }
+            (None, VimMode::Visual | VimMode::VisualLine | VimMode::VisualBlock) => theme.secondary,
         }
     };
 

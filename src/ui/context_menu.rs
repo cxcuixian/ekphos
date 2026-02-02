@@ -11,7 +11,12 @@ use crate::app::{App, ContextMenuItem, ContextMenuState};
 const MENU_WIDTH: u16 = 14;
 
 pub fn render_context_menu(f: &mut Frame, app: &App) {
-    if let ContextMenuState::Open { x, y, selected_index } = app.context_menu_state {
+    if let ContextMenuState::Open {
+        x,
+        y,
+        selected_index,
+    } = app.context_menu_state
+    {
         let items = ContextMenuItem::all();
         let menu_height = items.len() as u16 + 2; // +2 for borders
 

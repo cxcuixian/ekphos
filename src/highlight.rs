@@ -100,22 +100,23 @@ impl Highlighter {
 
         let result: Vec<Vec<Span<'static>>> = content
             .lines()
-            .map(|line| {
-                match highlighter.highlight_line(line, &self.syntax_set) {
+            .map(
+                |line| match highlighter.highlight_line(line, &self.syntax_set) {
                     Ok(ranges) => ranges
                         .into_iter()
                         .map(|(style, text)| self.style_to_span(text, style))
                         .collect(),
                     Err(_) => vec![Span::raw(line.to_string())],
-                }
-            })
+                },
+            )
             .collect();
 
         {
             let mut cache = self.cache.borrow_mut();
             if cache.len() >= MAX_CACHE_ENTRIES {
                 // Simple eviction: clear half the cache
-                let keys_to_remove: Vec<_> = cache.keys().take(MAX_CACHE_ENTRIES / 2).cloned().collect();
+                let keys_to_remove: Vec<_> =
+                    cache.keys().take(MAX_CACHE_ENTRIES / 2).cloned().collect();
                 for k in keys_to_remove {
                     cache.remove(&k);
                 }

@@ -79,7 +79,11 @@ pub fn render_content(f: &mut Frame, app: &mut App, area: Rect) {
         Style::default().fg(theme.border)
     };
 
-    let floating_indicator = if app.floating_cursor_mode { " [FLOAT] " } else { "" };
+    let floating_indicator = if app.floating_cursor_mode {
+        " [FLOAT] "
+    } else {
+        ""
+    };
     let title = app
         .current_note()
         .map(|n| format!(" {}{} ", n.title, floating_indicator))
@@ -176,7 +180,9 @@ pub fn render_content(f: &mut Frame, app: &mut App, area: Rect) {
                 }
             }
             ContentItem::TableRow { .. } => 1u16,
-            ContentItem::Details { content_lines, id, .. } => {
+            ContentItem::Details {
+                content_lines, id, ..
+            } => {
                 let is_open = details_states.get(id).copied().unwrap_or(false);
                 if is_open {
                     1 + content_lines.len() as u16
@@ -353,8 +359,13 @@ pub fn render_content(f: &mut Frame, app: &mut App, area: Rect) {
             ContentItem::TextLine(ref line) => {
                 let has_regular_link = app.item_link_at(item_idx).is_some();
                 let has_wiki_link = !app.item_wiki_links_at(item_idx).is_empty();
-                let has_link = (is_cursor_line || is_hovered) && (has_regular_link || has_wiki_link);
-                let selected_link = if is_cursor_line { app.selected_link_index } else { 0 };
+                let has_link =
+                    (is_cursor_line || is_hovered) && (has_regular_link || has_wiki_link);
+                let selected_link = if is_cursor_line {
+                    app.selected_link_index
+                } else {
+                    0
+                };
                 let wiki_validator = |target: &str| app.wiki_link_exists(target);
                 // Get fold state for H1-H3 headings
                 let fold_state = if app.is_heading_at(item_idx) {
@@ -362,56 +373,152 @@ pub fn render_content(f: &mut Frame, app: &mut App, area: Rect) {
                 } else {
                     None
                 };
-                render_content_line(f, &app.theme, line, chunks[chunk_idx], is_cursor_line, has_link, selected_link, Some(wiki_validator), fold_state);
+                render_content_line(
+                    f,
+                    &app.theme,
+                    line,
+                    chunks[chunk_idx],
+                    is_cursor_line,
+                    has_link,
+                    selected_link,
+                    Some(wiki_validator),
+                    fold_state,
+                );
                 if !skip_images {
                     let inline_images = extract_inline_images(line);
                     if !inline_images.is_empty() {
                         let text_height = calc_wrapped_height(line, 4);
-                        render_inline_thumbnails(f, app, &inline_images, chunks[chunk_idx], text_height);
+                        render_inline_thumbnails(
+                            f,
+                            app,
+                            &inline_images,
+                            chunks[chunk_idx],
+                            text_height,
+                        );
                     }
                 }
             }
             ContentItem::Image(path) => {
                 if !skip_images {
-                    render_inline_image_with_cursor(f, app, &path, chunks[chunk_idx], is_cursor_line, is_hovered);
+                    render_inline_image_with_cursor(
+                        f,
+                        app,
+                        &path,
+                        chunks[chunk_idx],
+                        is_cursor_line,
+                        is_hovered,
+                    );
                 }
             }
             ContentItem::CodeLine(line) => {
                 app.ensure_highlighter();
-                render_code_line(f, &app.theme, app.get_highlighter(), &line, &current_lang, chunks[chunk_idx], is_cursor_line);
+                render_code_line(
+                    f,
+                    &app.theme,
+                    app.get_highlighter(),
+                    &line,
+                    &current_lang,
+                    chunks[chunk_idx],
+                    is_cursor_line,
+                );
             }
             ContentItem::CodeFence(lang) => {
                 current_lang = lang.clone();
                 render_code_fence(f, &app.theme, &lang, chunks[chunk_idx], is_cursor_line);
             }
-            ContentItem::TaskItem { ref text, checked, .. } => {
-                let selected_link = if is_cursor_line { app.selected_link_index } else { 0 };
-                let has_links = !app.item_wiki_links_at(item_idx).is_empty() || !app.item_links_at(item_idx).is_empty();
+            ContentItem::TaskItem {
+                ref text, checked, ..
+            } => {
+                let selected_link = if is_cursor_line {
+                    app.selected_link_index
+                } else {
+                    0
+                };
+                let has_links = !app.item_wiki_links_at(item_idx).is_empty()
+                    || !app.item_links_at(item_idx).is_empty();
                 let wiki_validator = |target: &str| app.wiki_link_exists(target);
-                render_task_item(f, &app.theme, text, checked, chunks[chunk_idx], is_cursor_line, selected_link, has_links, Some(wiki_validator));
+                render_task_item(
+                    f,
+                    &app.theme,
+                    text,
+                    checked,
+                    chunks[chunk_idx],
+                    is_cursor_line,
+                    selected_link,
+                    has_links,
+                    Some(wiki_validator),
+                );
                 if !skip_images {
                     let inline_images = extract_inline_images(text);
                     if !inline_images.is_empty() {
                         let text_height = calc_wrapped_height(text, 6);
-                        render_inline_thumbnails(f, app, &inline_images, chunks[chunk_idx], text_height);
+                        render_inline_thumbnails(
+                            f,
+                            app,
+                            &inline_images,
+                            chunks[chunk_idx],
+                            text_height,
+                        );
                     }
                 }
             }
-            ContentItem::TableRow { cells, is_separator, is_header, column_widths } => {
-                render_table_row(f, &app.theme, &cells, is_separator, is_header, &column_widths, chunks[chunk_idx], is_cursor_line);
+            ContentItem::TableRow {
+                cells,
+                is_separator,
+                is_header,
+                column_widths,
+            } => {
+                render_table_row(
+                    f,
+                    &app.theme,
+                    &cells,
+                    is_separator,
+                    is_header,
+                    &column_widths,
+                    chunks[chunk_idx],
+                    is_cursor_line,
+                );
             }
-            ContentItem::Details { summary, content_lines, id } => {
+            ContentItem::Details {
+                summary,
+                content_lines,
+                id,
+            } => {
                 let is_open = app.details_open_states.get(&id).copied().unwrap_or(false);
-                render_details(f, &app.theme, &summary, &content_lines, is_open, chunks[chunk_idx], is_cursor_line);
+                render_details(
+                    f,
+                    &app.theme,
+                    &summary,
+                    &content_lines,
+                    is_open,
+                    chunks[chunk_idx],
+                    is_cursor_line,
+                );
             }
             ContentItem::FrontmatterDelimiter { .. } => {
                 render_frontmatter_delimiter(f, &app.theme, chunks[chunk_idx], is_cursor_line);
             }
-            ContentItem::FrontmatterLine { ref key, ref value, .. } => {
-                render_frontmatter_line(f, &app.theme, key, value, chunks[chunk_idx], is_cursor_line);
+            ContentItem::FrontmatterLine {
+                ref key, ref value, ..
+            } => {
+                render_frontmatter_line(
+                    f,
+                    &app.theme,
+                    key,
+                    value,
+                    chunks[chunk_idx],
+                    is_cursor_line,
+                );
             }
             ContentItem::TagBadges { ref tags, ref date } => {
-                render_tag_badges_inline(f, &app.theme, tags, date.as_deref(), chunks[chunk_idx], is_cursor_line);
+                render_tag_badges_inline(
+                    f,
+                    &app.theme,
+                    tags,
+                    date.as_deref(),
+                    chunks[chunk_idx],
+                    is_cursor_line,
+                );
             }
         }
     }
@@ -432,7 +539,7 @@ fn calc_formatting_shrinkage(text: &str, up_to_pos: usize) -> usize {
         if pos + 1 < chars.len() && chars[pos] == '*' && chars[pos + 1] == '*' {
             if let Some(end) = find_double_marker(&chars, pos + 2, '*') {
                 if end < up_to_pos {
-                    shrinkage += 4; 
+                    shrinkage += 4;
                 } else if pos + 2 < up_to_pos {
                     shrinkage += 2;
                 }
@@ -500,7 +607,7 @@ fn calc_formatting_shrinkage(text: &str, up_to_pos: usize) -> usize {
                 if end + 1 < up_to_pos {
                     shrinkage += 4;
                 } else if pos + 2 < up_to_pos {
-                    shrinkage += 2; 
+                    shrinkage += 2;
                 }
                 pos = end + 2;
                 continue;
@@ -508,11 +615,11 @@ fn calc_formatting_shrinkage(text: &str, up_to_pos: usize) -> usize {
         }
         if chars[pos] == '[' {
             if let Some((bracket_end, paren_end)) = find_markdown_link(&chars, pos) {
-                let url_len = paren_end - bracket_end - 2; 
+                let url_len = paren_end - bracket_end - 2;
                 if paren_end < up_to_pos {
-                    shrinkage += 1 + url_len + 2; 
+                    shrinkage += 1 + url_len + 2;
                 } else if bracket_end < up_to_pos {
-                    shrinkage += 1; 
+                    shrinkage += 1;
                 }
                 pos = paren_end + 1;
                 continue;
@@ -609,8 +716,9 @@ fn calc_table_adjusted_col(raw_col: usize, cells: &[String], column_widths: &[us
 
         if raw_col >= raw_cell_start && raw_col < raw_cell_end {
             let char_offset_in_raw_cell = raw_col.saturating_sub(raw_cell_start + 1); // +1 for leading space
-            // Convert character offset to display width
-            let display_offset: usize = cell.chars()
+                                                                                      // Convert character offset to display width
+            let display_offset: usize = cell
+                .chars()
                 .take(char_offset_in_raw_cell.min(cell_char_len))
                 .map(|c| c.width().unwrap_or(1))
                 .sum();
@@ -642,7 +750,11 @@ fn apply_content_search_highlights(
             break;
         }
 
-        let source_line = app.content_item_source_lines.get(item_idx).copied().unwrap_or(usize::MAX);
+        let source_line = app
+            .content_item_source_lines
+            .get(item_idx)
+            .copied()
+            .unwrap_or(usize::MAX);
         if source_line == usize::MAX {
             continue;
         }
@@ -662,7 +774,12 @@ fn apply_content_search_highlights(
                 // Calculate the rendered column position based on content type
                 // Use display width for CJK character support
                 let adjusted_col = match &app.content_items.get(item_idx) {
-                    Some(ContentItem::TableRow { cells, column_widths, is_separator, .. }) => {
+                    Some(ContentItem::TableRow {
+                        cells,
+                        column_widths,
+                        is_separator,
+                        ..
+                    }) => {
                         if *is_separator {
                             continue;
                         }
@@ -703,7 +820,8 @@ fn apply_content_search_highlights(
                             0
                         };
                         // Calculate display width of content before the match
-                        let display_col = content_text.chars()
+                        let display_col = content_text
+                            .chars()
                             .take(content_start_col.saturating_sub(formatting_shrinkage))
                             .map(|c| c.width().unwrap_or(1))
                             .sum::<usize>();
@@ -711,7 +829,8 @@ fn apply_content_search_highlights(
                     }
                     Some(ContentItem::CodeLine(code)) => {
                         // Calculate display width of code before the match
-                        let display_col: usize = code.chars()
+                        let display_col: usize = code
+                            .chars()
                             .take(m.start_col)
                             .map(|c| c.width().unwrap_or(1))
                             .sum();
@@ -722,8 +841,10 @@ fn apply_content_search_highlights(
                             continue;
                         }
                         let content_start_col = m.start_col - 6;
-                        let formatting_shrinkage = calc_formatting_shrinkage(text, content_start_col);
-                        let display_col: usize = text.chars()
+                        let formatting_shrinkage =
+                            calc_formatting_shrinkage(text, content_start_col);
+                        let display_col: usize = text
+                            .chars()
                             .take(content_start_col.saturating_sub(formatting_shrinkage))
                             .map(|c| c.width().unwrap_or(1))
                             .sum();
@@ -731,7 +852,8 @@ fn apply_content_search_highlights(
                     }
                     _ => {
                         // Calculate display width of raw line before the match
-                        let display_col: usize = raw_line.chars()
+                        let display_col: usize = raw_line
+                            .chars()
                             .take(m.start_col)
                             .map(|c| c.width().unwrap_or(1))
                             .sum();
@@ -741,7 +863,8 @@ fn apply_content_search_highlights(
 
                 let start_x = area.x + adjusted_col as u16;
                 // Calculate display width of matched text
-                let match_display_width: usize = raw_line.chars()
+                let match_display_width: usize = raw_line
+                    .chars()
                     .skip(m.start_col)
                     .take(m.end_col - m.start_col)
                     .map(|c| c.width().unwrap_or(1))
@@ -782,7 +905,10 @@ where
             if let Some(&(_, '*')) = chars.peek() {
                 // Found **, look for closing **
                 if i > current_start {
-                    spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                    spans.push(Span::styled(
+                        &text[current_start..i],
+                        Style::default().fg(content_theme.text),
+                    ));
                 }
                 chars.next(); // consume second *
                 let bold_start = i + 2;
@@ -801,7 +927,9 @@ where
                 if let Some(end) = bold_end {
                     spans.push(Span::styled(
                         &text[bold_start..end],
-                        Style::default().fg(content_theme.text).add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(content_theme.text)
+                            .add_modifier(Modifier::BOLD),
                     ));
                     current_start = end + 2;
                 } else {
@@ -811,7 +939,10 @@ where
                 continue;
             } else {
                 if i > current_start {
-                    spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                    spans.push(Span::styled(
+                        &text[current_start..i],
+                        Style::default().fg(content_theme.text),
+                    ));
                 }
                 let italic_start = i + 1;
                 let mut italic_end = None;
@@ -828,7 +959,9 @@ where
                 if let Some(end) = italic_end {
                     spans.push(Span::styled(
                         &text[italic_start..end],
-                        Style::default().fg(content_theme.text).add_modifier(Modifier::ITALIC),
+                        Style::default()
+                            .fg(content_theme.text)
+                            .add_modifier(Modifier::ITALIC),
                     ));
                     current_start = end + 1;
                 } else {
@@ -842,9 +975,12 @@ where
         if c == '_' {
             if let Some(&(_, '_')) = chars.peek() {
                 if i > current_start {
-                    spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                    spans.push(Span::styled(
+                        &text[current_start..i],
+                        Style::default().fg(content_theme.text),
+                    ));
                 }
-                chars.next(); 
+                chars.next();
                 let bold_start = i + 2;
                 let mut bold_end = None;
 
@@ -852,7 +988,7 @@ where
                     if ch == '_' {
                         if let Some(&(_, '_')) = chars.peek() {
                             bold_end = Some(j);
-                            chars.next(); 
+                            chars.next();
                             break;
                         }
                     }
@@ -861,7 +997,9 @@ where
                 if let Some(end) = bold_end {
                     spans.push(Span::styled(
                         &text[bold_start..end],
-                        Style::default().fg(content_theme.text).add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(content_theme.text)
+                            .add_modifier(Modifier::BOLD),
                     ));
                     current_start = end + 2;
                 } else {
@@ -870,7 +1008,10 @@ where
                 continue;
             } else {
                 if i > current_start {
-                    spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                    spans.push(Span::styled(
+                        &text[current_start..i],
+                        Style::default().fg(content_theme.text),
+                    ));
                 }
                 let italic_start = i + 1;
                 let mut italic_end = None;
@@ -887,7 +1028,9 @@ where
                 if let Some(end) = italic_end {
                     spans.push(Span::styled(
                         &text[italic_start..end],
-                        Style::default().fg(content_theme.text).add_modifier(Modifier::ITALIC),
+                        Style::default()
+                            .fg(content_theme.text)
+                            .add_modifier(Modifier::ITALIC),
                     ));
                     current_start = end + 1;
                 } else {
@@ -901,9 +1044,12 @@ where
         if c == '~' {
             if let Some(&(_, '~')) = chars.peek() {
                 if i > current_start {
-                    spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                    spans.push(Span::styled(
+                        &text[current_start..i],
+                        Style::default().fg(content_theme.text),
+                    ));
                 }
-                chars.next(); 
+                chars.next();
                 let strike_start = i + 2;
                 let mut strike_end = None;
 
@@ -911,7 +1057,7 @@ where
                     if ch == '~' {
                         if let Some(&(_, '~')) = chars.peek() {
                             strike_end = Some(j);
-                            chars.next(); 
+                            chars.next();
                             break;
                         }
                     }
@@ -920,7 +1066,9 @@ where
                 if let Some(end) = strike_end {
                     spans.push(Span::styled(
                         &text[strike_start..end],
-                        Style::default().fg(content_theme.text).add_modifier(Modifier::CROSSED_OUT),
+                        Style::default()
+                            .fg(content_theme.text)
+                            .add_modifier(Modifier::CROSSED_OUT),
                     ));
                     current_start = end + 2;
                 } else {
@@ -933,7 +1081,10 @@ where
         // Check for `code`
         if c == '`' {
             if i > current_start {
-                spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                spans.push(Span::styled(
+                    &text[current_start..i],
+                    Style::default().fg(content_theme.text),
+                ));
             }
             let code_start = i + 1;
             let mut code_end = None;
@@ -948,7 +1099,9 @@ where
             if let Some(end) = code_end {
                 spans.push(Span::styled(
                     &text[code_start..end],
-                    Style::default().fg(content_theme.code).bg(content_theme.code_background),
+                    Style::default()
+                        .fg(content_theme.code)
+                        .bg(content_theme.code_background),
                 ));
                 current_start = end + 1;
             } else {
@@ -968,7 +1121,10 @@ where
                     let after_bracket = &remaining[2 + bracket_end + 2..];
                     if let Some(paren_end) = after_bracket.find(')') {
                         if i > current_start {
-                            spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                            spans.push(Span::styled(
+                                &text[current_start..i],
+                                Style::default().fg(content_theme.text),
+                            ));
                         }
 
                         let alt_text = &remaining[3..2 + bracket_end];
@@ -1011,7 +1167,10 @@ where
                     let after_bracket = &remaining[1 + bracket_end + 2..];
                     if let Some(paren_end) = after_bracket.find(')') {
                         if i > current_start {
-                            spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                            spans.push(Span::styled(
+                                &text[current_start..i],
+                                Style::default().fg(content_theme.text),
+                            ));
                         }
 
                         let alt_text = &remaining[2..1 + bracket_end];
@@ -1055,12 +1214,19 @@ where
             if remaining.starts_with("[[") {
                 if let Some(close_pos) = remaining[2..].find("]]") {
                     let raw_content = &remaining[2..2 + close_pos];
-                    if !raw_content.is_empty() && !raw_content.contains('[') && !raw_content.contains(']') {
+                    if !raw_content.is_empty()
+                        && !raw_content.contains('[')
+                        && !raw_content.contains(']')
+                    {
                         if i > current_start {
-                            spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                            spans.push(Span::styled(
+                                &text[current_start..i],
+                                Style::default().fg(content_theme.text),
+                            ));
                         }
 
-                        let (content, display_text) = if let Some(pipe_pos) = raw_content.find('|') {
+                        let (content, display_text) = if let Some(pipe_pos) = raw_content.find('|')
+                        {
                             (&raw_content[..pipe_pos], Some(&raw_content[pipe_pos + 1..]))
                         } else {
                             (raw_content, None)
@@ -1110,7 +1276,10 @@ where
                 let after_bracket = &remaining[bracket_end + 2..];
                 if let Some(paren_end) = after_bracket.find(')') {
                     if i > current_start {
-                        spans.push(Span::styled(&text[current_start..i], Style::default().fg(content_theme.text)));
+                        spans.push(Span::styled(
+                            &text[current_start..i],
+                            Style::default().fg(content_theme.text),
+                        ));
                     }
 
                     let link_text = &remaining[1..bracket_end];
@@ -1150,7 +1319,10 @@ where
 
     // Add remaining text
     if current_start < text.len() {
-        spans.push(Span::styled(&text[current_start..], Style::default().fg(content_theme.text)));
+        spans.push(Span::styled(
+            &text[current_start..],
+            Style::default().fg(content_theme.text),
+        ));
     }
 
     if spans.is_empty() {
@@ -1202,7 +1374,8 @@ fn wrap_line_for_cursor<'a>(
         }
     }
 
-    let content_width: usize = content_spans.iter()
+    let content_width: usize = content_spans
+        .iter()
         .map(|s| display_width(&s.content))
         .sum();
     let first_line_available = available_width.saturating_sub(prefix_width);
@@ -1273,7 +1446,11 @@ fn wrap_line_for_cursor<'a>(
     let mut is_first_line = true;
 
     for styled_word in styled_words {
-        let max_width = if is_first_line { first_line_available } else { continuation_available };
+        let max_width = if is_first_line {
+            first_line_available
+        } else {
+            continuation_available
+        };
         let is_whitespace = styled_word.text.chars().all(|c| c.is_whitespace());
 
         // Skip leading whitespace on continuation lines
@@ -1291,7 +1468,11 @@ fn wrap_line_for_cursor<'a>(
             let style = styled_word.style;
 
             while !remaining.is_empty() {
-                let line_max = if is_first_line { first_line_available } else { continuation_available };
+                let line_max = if is_first_line {
+                    first_line_available
+                } else {
+                    continuation_available
+                };
                 let available_in_line = line_max.saturating_sub(current_line_width);
 
                 if available_in_line == 0 {
@@ -1302,7 +1483,8 @@ fn wrap_line_for_cursor<'a>(
                         lines.push(Line::from(line_spans));
                         is_first_line = false;
                     } else {
-                        let mut line_spans = vec![Span::styled(continuation_indent.clone(), Style::default())];
+                        let mut line_spans =
+                            vec![Span::styled(continuation_indent.clone(), Style::default())];
                         line_spans.extend(current_line_spans.drain(..));
                         lines.push(Line::from(line_spans));
                     }
@@ -1341,7 +1523,8 @@ fn wrap_line_for_cursor<'a>(
                         lines.push(Line::from(line_spans));
                         is_first_line = false;
                     } else {
-                        let mut line_spans = vec![Span::styled(continuation_indent.clone(), Style::default())];
+                        let mut line_spans =
+                            vec![Span::styled(continuation_indent.clone(), Style::default())];
                         line_spans.extend(current_line_spans.drain(..));
                         lines.push(Line::from(line_spans));
                     }
@@ -1367,7 +1550,8 @@ fn wrap_line_for_cursor<'a>(
                     lines.push(Line::from(line_spans));
                     is_first_line = false;
                 } else {
-                    let mut line_spans = vec![Span::styled(continuation_indent.clone(), Style::default())];
+                    let mut line_spans =
+                        vec![Span::styled(continuation_indent.clone(), Style::default())];
                     line_spans.extend(current_line_spans.drain(..));
                     lines.push(Line::from(line_spans));
                 }
@@ -1411,12 +1595,12 @@ fn normalize_whitespace(text: &str) -> String {
     let mut result = String::with_capacity(text.len());
     for c in text.chars() {
         match c {
-            '\t' => result.push_str("    "),  // Tab to 4 spaces
-            '\u{00A0}' => result.push(' '),  // Non-breaking space
-            '\u{2000}'..='\u{200B}' => result.push(' '),  // Various Unicode spaces
-            '\u{202F}' => result.push(' '),  // Narrow no-break space
-            '\u{205F}' => result.push(' '),  // Medium mathematical space
-            '\u{3000}' => result.push(' '),  // Ideographic space
+            '\t' => result.push_str("    "),             // Tab to 4 spaces
+            '\u{00A0}' => result.push(' '),              // Non-breaking space
+            '\u{2000}'..='\u{200B}' => result.push(' '), // Various Unicode spaces
+            '\u{202F}' => result.push(' '),              // Narrow no-break space
+            '\u{205F}' => result.push(' '),              // Medium mathematical space
+            '\u{3000}' => result.push(' '),              // Ideographic space
             _ => result.push(c),
         }
     }
@@ -1432,7 +1616,7 @@ fn render_content_line<F>(
     has_link: bool,
     selected_link: usize,
     wiki_link_validator: Option<F>,
-    fold_state: Option<bool>,  // None = not foldable, Some(true) = folded, Some(false) = expanded
+    fold_state: Option<bool>, // None = not foldable, Some(true) = folded, Some(false) = expanded
 ) where
     F: Fn(&str) -> bool,
 {
@@ -1443,9 +1627,9 @@ fn render_content_line<F>(
     // Fold indicator for H1-H3 headings
     let fold_indicator = |is_folded: Option<bool>, color: ratatui::style::Color| -> Span {
         match is_folded {
-            Some(true) => Span::styled("▶ ", Style::default().fg(color)),   // Folded
-            Some(false) => Span::styled("▼ ", Style::default().fg(color)),  // Expanded
-            None => Span::styled("  ", Style::default()),                    // Not foldable
+            Some(true) => Span::styled("▶ ", Style::default().fg(color)), // Folded
+            Some(false) => Span::styled("▼ ", Style::default().fg(color)), // Expanded
+            None => Span::styled("  ", Style::default()),                 // Not foldable
         }
     };
 
@@ -1528,7 +1712,12 @@ fn render_content_line<F>(
             Span::styled(cursor_indicator, Style::default().fg(theme.warning)),
             Span::styled("• ", Style::default().fg(content_theme.list_marker)),
         ];
-        spans.extend(parse_inline_formatting(line.trim_start_matches("- "), theme, selected, wiki_link_validator));
+        spans.extend(parse_inline_formatting(
+            line.trim_start_matches("- "),
+            theme,
+            selected,
+            wiki_link_validator,
+        ));
         Line::from(spans)
     } else if line.starts_with("> ") {
         // Blockquote - with inline formatting support
@@ -1542,7 +1731,9 @@ fn render_content_line<F>(
         for span in formatted {
             let mut style = span.style;
             if style.fg.is_none() || style.fg == Some(content_theme.text.into()) {
-                style = style.fg(content_theme.blockquote).add_modifier(Modifier::ITALIC);
+                style = style
+                    .fg(content_theme.blockquote)
+                    .add_modifier(Modifier::ITALIC);
             }
             spans.push(Span::styled(span.content, style));
         }
@@ -1561,21 +1752,35 @@ fn render_content_line<F>(
             Span::styled(cursor_indicator, Style::default().fg(theme.warning)),
             Span::styled("• ", Style::default().fg(content_theme.list_marker)),
         ];
-        spans.extend(parse_inline_formatting(line.trim_start_matches("* "), theme, selected, wiki_link_validator));
+        spans.extend(parse_inline_formatting(
+            line.trim_start_matches("* "),
+            theme,
+            selected,
+            wiki_link_validator,
+        ));
         Line::from(spans)
     } else {
         // Regular text lines (including numbered lists)
         let selected = if is_cursor { Some(selected_link) } else { None };
-        let mut spans = vec![
-            Span::styled(cursor_indicator, Style::default().fg(theme.warning)),
-        ];
-        spans.extend(parse_inline_formatting(line, theme, selected, wiki_link_validator));
+        let mut spans = vec![Span::styled(
+            cursor_indicator,
+            Style::default().fg(theme.warning),
+        )];
+        spans.extend(parse_inline_formatting(
+            line,
+            theme,
+            selected,
+            wiki_link_validator,
+        ));
         Line::from(spans)
     };
 
     let final_line = if has_link {
         let mut spans = styled_line.spans;
-        spans.push(Span::styled(" Open ↗", Style::default().fg(content_theme.link)));
+        spans.push(Span::styled(
+            " Open ↗",
+            Style::default().fg(content_theme.link),
+        ));
         Line::from(spans)
     } else {
         styled_line
@@ -1627,10 +1832,16 @@ fn render_code_line(
         if let Some(hl) = highlighter {
             spans.extend(hl.highlight_line(&expanded_line, lang));
         } else {
-            spans.push(Span::styled(expanded_line, Style::default().fg(content_theme.code)));
+            spans.push(Span::styled(
+                expanded_line,
+                Style::default().fg(content_theme.code),
+            ));
         }
     } else {
-        spans.push(Span::styled(expanded_line, Style::default().fg(content_theme.code)));
+        spans.push(Span::styled(
+            expanded_line,
+            Style::default().fg(content_theme.code),
+        ));
     }
 
     let wrapped_lines = wrap_line_for_cursor(spans, available_width, theme);
@@ -1692,7 +1903,7 @@ fn render_task_item<F>(
 
     let checkbox_selected = is_cursor && has_links && selected_link == 0;
     let checkbox_color = if checkbox_selected {
-        theme.warning 
+        theme.warning
     } else if checked {
         theme.success
     } else {
@@ -1709,7 +1920,8 @@ fn render_task_item<F>(
     } else {
         None
     };
-    let mut text_spans = parse_inline_formatting(&expanded_text, theme, link_selected, wiki_link_validator);
+    let mut text_spans =
+        parse_inline_formatting(&expanded_text, theme, link_selected, wiki_link_validator);
     if checked {
         text_spans = text_spans
             .into_iter()
@@ -1726,7 +1938,9 @@ fn render_task_item<F>(
             .bg(theme.warning)
             .add_modifier(Modifier::BOLD)
     } else {
-        Style::default().fg(checkbox_color).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(checkbox_color)
+            .add_modifier(Modifier::BOLD)
     };
 
     let bracket_style = if checkbox_selected {
@@ -1799,7 +2013,10 @@ fn render_table_row(
             }
 
             let expanded_cell = expand_tabs(cell);
-            let width = column_widths.get(i).copied().unwrap_or(expanded_cell.chars().count());
+            let width = column_widths
+                .get(i)
+                .copied()
+                .unwrap_or(expanded_cell.chars().count());
             let cell_content = format!(" {:^width$} ", expanded_cell, width = width);
 
             let cell_style = if is_header {
@@ -1828,12 +2045,20 @@ fn render_table_row(
     f.render_widget(paragraph, area);
 }
 
-fn render_inline_image_with_cursor(f: &mut Frame, app: &mut App, path: &str, area: Rect, is_cursor: bool, is_hovered: bool) {
+fn render_inline_image_with_cursor(
+    f: &mut Frame,
+    app: &mut App,
+    path: &str,
+    area: Rect,
+    is_cursor: bool,
+    is_hovered: bool,
+) {
     let is_remote = path.starts_with("http://") || path.starts_with("https://");
     let is_pending = is_remote && app.is_image_pending(path);
 
     let resolved_path = app.resolve_image_path(path);
-    let resolved_path_str = resolved_path.as_ref()
+    let resolved_path_str = resolved_path
+        .as_ref()
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| path.to_string());
 
@@ -1856,7 +2081,8 @@ fn render_inline_image_with_cursor(f: &mut Frame, app: &mut App, path: &str, are
             None
         } else if let Some(ref resolved) = resolved_path {
             if let Ok(img) = image::open(resolved) {
-                app.image_cache.insert(resolved_path_str.clone(), img.clone());
+                app.image_cache
+                    .insert(resolved_path_str.clone(), img.clone());
                 Some(img)
             } else {
                 None
@@ -1910,9 +2136,20 @@ fn render_inline_image_with_cursor(f: &mut Frame, app: &mut App, path: &str, are
 
     f.render_widget(block, area);
 
-    if is_pending || (is_remote && !is_cached && app.current_image.as_ref().map(|s| s.path != resolved_path_str).unwrap_or(true)) {
-        let loading = Paragraph::new("  Loading remote image...")
-            .style(Style::default().fg(theme.secondary).add_modifier(Modifier::ITALIC));
+    if is_pending
+        || (is_remote
+            && !is_cached
+            && app
+                .current_image
+                .as_ref()
+                .map(|s| s.path != resolved_path_str)
+                .unwrap_or(true))
+    {
+        let loading = Paragraph::new("  Loading remote image...").style(
+            Style::default()
+                .fg(theme.secondary)
+                .add_modifier(Modifier::ITALIC),
+        );
         f.render_widget(loading, inner_area);
         return;
     }
@@ -1923,8 +2160,11 @@ fn render_inline_image_with_cursor(f: &mut Frame, app: &mut App, path: &str, are
             f.render_stateful_widget(image_widget, inner_area, &mut state.image);
         }
     } else if !is_remote {
-        let placeholder = Paragraph::new("  [Image not found]")
-            .style(Style::default().fg(theme.error).add_modifier(Modifier::ITALIC));
+        let placeholder = Paragraph::new("  [Image not found]").style(
+            Style::default()
+                .fg(theme.error)
+                .add_modifier(Modifier::ITALIC),
+        );
         f.render_widget(placeholder, inner_area);
     }
 }
@@ -1953,12 +2193,13 @@ fn render_inline_thumbnails(
         let thumb_area = Rect {
             x: area.x + 2,
             y: area.y + y_offset,
-            width: area.width.saturating_sub(4).min(40), 
+            width: area.width.saturating_sub(4).min(40),
             height: INLINE_THUMBNAIL_HEIGHT,
         };
         let is_remote = path.starts_with("http://") || path.starts_with("https://");
         let resolved_path = app.resolve_image_path(path);
-        let resolved_path_str = resolved_path.as_ref()
+        let resolved_path_str = resolved_path
+            .as_ref()
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| path.to_string());
 
@@ -1972,7 +2213,8 @@ fn render_inline_thumbnails(
             None
         } else if let Some(ref resolved) = resolved_path {
             if let Ok(img) = image::open(resolved) {
-                app.image_cache.insert(resolved_path_str.clone(), img.clone());
+                app.image_cache
+                    .insert(resolved_path_str.clone(), img.clone());
                 Some(img)
             } else {
                 None
@@ -1989,12 +2231,18 @@ fn render_inline_thumbnails(
             let image_widget = StatefulImage::new(None);
             f.render_stateful_widget(image_widget, thumb_area, &mut thumb_state.image);
         } else if is_pending {
-            let loading = Paragraph::new("  ⏳ Loading...")
-                .style(Style::default().fg(secondary_color).add_modifier(Modifier::ITALIC));
+            let loading = Paragraph::new("  ⏳ Loading...").style(
+                Style::default()
+                    .fg(secondary_color)
+                    .add_modifier(Modifier::ITALIC),
+            );
             f.render_widget(loading, thumb_area);
         } else if !is_remote && resolved_path.is_none() {
-            let not_found = Paragraph::new("  ❌ Not found")
-                .style(Style::default().fg(error_color).add_modifier(Modifier::ITALIC));
+            let not_found = Paragraph::new("  ❌ Not found").style(
+                Style::default()
+                    .fg(error_color)
+                    .add_modifier(Modifier::ITALIC),
+            );
             f.render_widget(not_found, thumb_area);
         }
 
@@ -2053,12 +2301,7 @@ fn render_details(
     f.render_widget(paragraph, area);
 }
 
-fn render_frontmatter_delimiter(
-    f: &mut Frame,
-    theme: &Theme,
-    area: Rect,
-    is_cursor: bool,
-) {
+fn render_frontmatter_delimiter(f: &mut Frame, theme: &Theme, area: Rect, is_cursor: bool) {
     let cursor_indicator = if is_cursor { "▶ " } else { "  " };
 
     let spans = vec![
@@ -2110,7 +2353,10 @@ fn render_tag_badges_inline(
         if !tags.is_empty() {
             spans.push(Span::styled("  ", Style::default()));
         }
-        spans.push(Span::styled(d, Style::default().fg(theme.content.frontmatter)));
+        spans.push(Span::styled(
+            d,
+            Style::default().fg(theme.content.frontmatter),
+        ));
     }
 
     // Render on second line (first line is padding)

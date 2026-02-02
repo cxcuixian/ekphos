@@ -34,8 +34,14 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
 
         // Content mode always uses wider layout for preview panel (prevents layout shift)
         let has_preview = *mode == SearchPickerMode::Content;
-        let base_width = if has_preview { POPUP_MAX_WIDTH_WITH_PREVIEW } else { POPUP_MAX_WIDTH };
-        let popup_width = base_width.min((area.width as f32 * 0.9) as u16).min(area.width.saturating_sub(4));
+        let base_width = if has_preview {
+            POPUP_MAX_WIDTH_WITH_PREVIEW
+        } else {
+            POPUP_MAX_WIDTH
+        };
+        let popup_width = base_width
+            .min((area.width as f32 * 0.9) as u16)
+            .min(area.width.saturating_sub(4));
 
         // For content mode with preview, we split into left (list) and right (preview)
         let list_width = if has_preview {
@@ -90,15 +96,18 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
         // Render the main popup border first
         let popup_block = Block::default()
             .title(" Search (Ctrl+K) ")
-            .title_bottom(Line::from(if results_len == 0 {
-                if *search_in_progress {
-                    " ... ".to_string()
+            .title_bottom(
+                Line::from(if results_len == 0 {
+                    if *search_in_progress {
+                        " ... ".to_string()
+                    } else {
+                        " No matches ".to_string()
+                    }
                 } else {
-                    " No matches ".to_string()
-                }
-            } else {
-                format!(" {}/{} ", selected_index + 1, results_len)
-            }).right_aligned())
+                    format!(" {}/{} ", selected_index + 1, results_len)
+                })
+                .right_aligned(),
+            )
             .borders(Borders::ALL)
             .border_style(Style::default().fg(theme.info))
             .style(Style::default().bg(theme.background_secondary));
@@ -121,12 +130,16 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
 
         // Mode tabs line
         let files_style = if *mode == SearchPickerMode::Files {
-            Style::default().fg(theme.primary).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(theme.primary)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(theme.muted)
         };
         let content_style = if *mode == SearchPickerMode::Content {
-            Style::default().fg(theme.primary).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(theme.primary)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(theme.muted)
         };
@@ -172,7 +185,8 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
 
         let header_height = header_lines.len() as u16;
         let header_area = Rect::new(inner_area.x, inner_area.y, inner_area.width, header_height);
-        let header = Paragraph::new(header_lines).style(Style::default().bg(theme.background_secondary));
+        let header =
+            Paragraph::new(header_lines).style(Style::default().bg(theme.background_secondary));
         f.render_widget(header, header_area);
 
         // Results area (below header)
@@ -208,7 +222,8 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
             let sep_lines: Vec<Line> = (0..sep_area.height)
                 .map(|_| Line::from(Span::styled("│", Style::default().fg(theme.muted))))
                 .collect();
-            let sep = Paragraph::new(sep_lines).style(Style::default().bg(theme.background_secondary));
+            let sep =
+                Paragraph::new(sep_lines).style(Style::default().bg(theme.background_secondary));
             f.render_widget(sep, sep_area);
 
             // Render compact content list
@@ -228,14 +243,33 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
                     Span::styled(empty_message, Style::default().fg(theme.muted)),
                 ]));
             } else {
-                render_content_results_compact(&mut list_lines, content_results, *selected_index, *scroll_offset, max_name_width, list_area.width, theme, query);
+                render_content_results_compact(
+                    &mut list_lines,
+                    content_results,
+                    *selected_index,
+                    *scroll_offset,
+                    max_name_width,
+                    list_area.width,
+                    theme,
+                    query,
+                );
             }
 
-            let list = Paragraph::new(list_lines).style(Style::default().bg(theme.background_secondary));
+            let list =
+                Paragraph::new(list_lines).style(Style::default().bg(theme.background_secondary));
             f.render_widget(list, list_area);
 
             // Render preview
-            render_preview(f, app, content_results, *selected_index, preview_area, query, theme, *search_in_progress);
+            render_preview(
+                f,
+                app,
+                content_results,
+                *selected_index,
+                preview_area,
+                query,
+                theme,
+                *search_in_progress,
+            );
 
             // Store areas for mouse handling
             app.search_picker_area = popup_area;
@@ -251,12 +285,24 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
                         result_lines.push(Line::from(vec![
                             Span::raw(" "),
                             Span::styled(
-                                if query.is_empty() { "Type to search files..." } else { "No matching files" },
+                                if query.is_empty() {
+                                    "Type to search files..."
+                                } else {
+                                    "No matching files"
+                                },
                                 Style::default().fg(theme.muted),
                             ),
                         ]));
                     } else {
-                        render_file_results(&mut result_lines, file_results, *selected_index, *scroll_offset, max_name_width, results_area.width, theme);
+                        render_file_results(
+                            &mut result_lines,
+                            file_results,
+                            *selected_index,
+                            *scroll_offset,
+                            max_name_width,
+                            results_area.width,
+                            theme,
+                        );
                     }
                 }
                 SearchPickerMode::Content => {
@@ -269,17 +315,30 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
                         result_lines.push(Line::from(vec![
                             Span::raw(" "),
                             Span::styled(
-                                if query.is_empty() { "Type to search content..." } else { "No matching content" },
+                                if query.is_empty() {
+                                    "Type to search content..."
+                                } else {
+                                    "No matching content"
+                                },
                                 Style::default().fg(theme.muted),
                             ),
                         ]));
                     } else {
-                        render_content_results(&mut result_lines, content_results, *selected_index, *scroll_offset, max_name_width, results_area.width, theme);
+                        render_content_results(
+                            &mut result_lines,
+                            content_results,
+                            *selected_index,
+                            *scroll_offset,
+                            max_name_width,
+                            results_area.width,
+                            theme,
+                        );
                     }
                 }
             }
 
-            let results = Paragraph::new(result_lines).style(Style::default().bg(theme.background_secondary));
+            let results =
+                Paragraph::new(result_lines).style(Style::default().bg(theme.background_secondary));
             f.render_widget(results, results_area);
 
             // Store areas for mouse handling
@@ -298,12 +357,21 @@ fn render_file_results(
     popup_width: u16,
     theme: &crate::config::Theme,
 ) {
-    for (idx, result) in results.iter().enumerate().skip(scroll_offset).take(POPUP_MAX_VISIBLE_ITEMS) {
+    for (idx, result) in results
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(POPUP_MAX_VISIBLE_ITEMS)
+    {
         let is_selected = idx == selected_index;
 
         // Truncate display name if too long
         let display_name = if result.display_name.chars().count() > max_name_width {
-            let truncated: String = result.display_name.chars().take(max_name_width.saturating_sub(1)).collect();
+            let truncated: String = result
+                .display_name
+                .chars()
+                .take(max_name_width.saturating_sub(1))
+                .collect();
             format!("{}…", truncated)
         } else {
             result.display_name.clone()
@@ -344,7 +412,10 @@ fn render_file_results(
             };
 
             let hint_text = if folder.chars().count() > max_name_width.saturating_sub(2) {
-                let truncated: String = folder.chars().take(max_name_width.saturating_sub(3)).collect();
+                let truncated: String = folder
+                    .chars()
+                    .take(max_name_width.saturating_sub(3))
+                    .collect();
                 format!("  {}…", truncated)
             } else {
                 format!("  {}", folder)
@@ -352,7 +423,8 @@ fn render_file_results(
 
             if is_selected {
                 let content_width = (popup_width as usize).saturating_sub(2);
-                let padding_right = " ".repeat(content_width.saturating_sub(hint_text.chars().count()));
+                let padding_right =
+                    " ".repeat(content_width.saturating_sub(hint_text.chars().count()));
                 lines.push(Line::from(vec![
                     Span::styled(hint_text, hint_style),
                     Span::styled(padding_right, Style::default().bg(theme.primary)),
@@ -373,7 +445,12 @@ fn render_content_results(
     popup_width: u16,
     theme: &crate::config::Theme,
 ) {
-    for (idx, result) in results.iter().enumerate().skip(scroll_offset).take(POPUP_MAX_VISIBLE_ITEMS_CONTENT) {
+    for (idx, result) in results
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(POPUP_MAX_VISIBLE_ITEMS_CONTENT)
+    {
         let is_selected = idx == selected_index;
 
         let content_width = (popup_width as usize).saturating_sub(2);
@@ -383,7 +460,11 @@ fn render_content_results(
         let available_for_title = max_name_width.saturating_sub(line_hint.len() + 1);
 
         let display_name = if result.display_name.chars().count() > available_for_title {
-            let truncated: String = result.display_name.chars().take(available_for_title.saturating_sub(1)).collect();
+            let truncated: String = result
+                .display_name
+                .chars()
+                .take(available_for_title.saturating_sub(1))
+                .collect();
             format!("{}…", truncated)
         } else {
             result.display_name.clone()
@@ -433,7 +514,10 @@ fn render_content_results(
         let max_line_width = max_name_width.saturating_sub(2);
         let line_chars: Vec<char> = matched_line.chars().collect();
         let (display_line, adj_start, adj_end) = if line_chars.len() > max_line_width {
-            let truncated: String = line_chars.iter().take(max_line_width.saturating_sub(1)).collect();
+            let truncated: String = line_chars
+                .iter()
+                .take(max_line_width.saturating_sub(1))
+                .collect();
             let adj_start = match_start.min(max_line_width.saturating_sub(1));
             let adj_end = match_end.min(max_line_width.saturating_sub(1));
             (format!("{}…", truncated), adj_start, adj_end)
@@ -461,7 +545,11 @@ fn render_content_results(
         // Split the line into before, match, after parts
         let display_chars: Vec<char> = display_line.chars().collect();
         let before: String = display_chars.iter().take(adj_start).collect();
-        let matched: String = display_chars.iter().skip(adj_start).take(adj_end.saturating_sub(adj_start)).collect();
+        let matched: String = display_chars
+            .iter()
+            .skip(adj_start)
+            .take(adj_end.saturating_sub(adj_start))
+            .collect();
         let after: String = display_chars.iter().skip(adj_end).collect();
 
         if is_selected {
@@ -492,14 +580,18 @@ fn render_content_results(
             };
 
             let hint_text = if folder.chars().count() > max_name_width.saturating_sub(2) {
-                let truncated: String = folder.chars().take(max_name_width.saturating_sub(3)).collect();
+                let truncated: String = folder
+                    .chars()
+                    .take(max_name_width.saturating_sub(3))
+                    .collect();
                 format!("  {}…", truncated)
             } else {
                 format!("  {}", folder)
             };
 
             if is_selected {
-                let padding_right = " ".repeat(content_width.saturating_sub(hint_text.chars().count()));
+                let padding_right =
+                    " ".repeat(content_width.saturating_sub(hint_text.chars().count()));
                 lines.push(Line::from(vec![
                     Span::styled(hint_text, hint_style),
                     Span::styled(padding_right, Style::default().bg(theme.primary)),
@@ -525,7 +617,12 @@ fn render_content_results_compact(
 ) {
     let query_lower = query.to_lowercase();
 
-    for (idx, result) in results.iter().enumerate().skip(scroll_offset).take(POPUP_MAX_VISIBLE_ITEMS_CONTENT) {
+    for (idx, result) in results
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(POPUP_MAX_VISIBLE_ITEMS_CONTENT)
+    {
         let is_selected = idx == selected_index;
         let content_width = (area_width as usize).saturating_sub(2);
 
@@ -537,7 +634,10 @@ fn render_content_results_compact(
         // Trim and truncate the matched line
         let matched_line = result.matched_line.trim();
         let display_line: String = if matched_line.chars().count() > available_for_content {
-            let truncated: String = matched_line.chars().take(available_for_content.saturating_sub(1)).collect();
+            let truncated: String = matched_line
+                .chars()
+                .take(available_for_content.saturating_sub(1))
+                .collect();
             format!("{}…", truncated)
         } else {
             matched_line.to_string()
@@ -550,9 +650,7 @@ fn render_content_results_compact(
         };
 
         let normal_style = if is_selected {
-            Style::default()
-                .fg(theme.background)
-                .bg(theme.primary)
+            Style::default().fg(theme.background).bg(theme.primary)
         } else {
             Style::default().fg(theme.foreground)
         };
@@ -581,9 +679,15 @@ fn render_content_results_compact(
             let mut last_end = 0;
 
             let mut search_start = 0;
-            while let Some(byte_pos) = line_lower.get(search_start..).and_then(|s| s.find(&query_lower)) {
+            while let Some(byte_pos) = line_lower
+                .get(search_start..)
+                .and_then(|s| s.find(&query_lower))
+            {
                 let match_byte_start = search_start + byte_pos;
-                let match_char_start = line_lower.get(..match_byte_start).map(|s| s.chars().count()).unwrap_or(0);
+                let match_char_start = line_lower
+                    .get(..match_byte_start)
+                    .map(|s| s.chars().count())
+                    .unwrap_or(0);
                 let match_char_end = match_char_start + query_lower.chars().count();
 
                 // Bounds check before slicing
@@ -592,13 +696,16 @@ fn render_content_results_compact(
 
                 // Add text before match
                 if safe_char_start > last_end && last_end < line_chars_len {
-                    let before: String = line_chars[last_end..safe_char_start.min(line_chars_len)].iter().collect();
+                    let before: String = line_chars[last_end..safe_char_start.min(line_chars_len)]
+                        .iter()
+                        .collect();
                     spans.push(Span::styled(before, normal_style));
                 }
 
                 // Add highlighted match
                 if safe_char_start < line_chars_len {
-                    let matched: String = line_chars[safe_char_start..safe_char_end].iter().collect();
+                    let matched: String =
+                        line_chars[safe_char_start..safe_char_end].iter().collect();
                     spans.push(Span::styled(matched, highlight_style));
                 }
 
@@ -673,7 +780,10 @@ fn render_preview(
         };
         let max_header_width = (area.width as usize).saturating_sub(2);
         let display_header: String = if file_header.chars().count() > max_header_width {
-            let truncated: String = file_header.chars().take(max_header_width.saturating_sub(1)).collect();
+            let truncated: String = file_header
+                .chars()
+                .take(max_header_width.saturating_sub(1))
+                .collect();
             format!("{}…", truncated)
         } else {
             file_header
@@ -681,15 +791,20 @@ fn render_preview(
         let header_lines = vec![
             Line::from(vec![
                 Span::styled(" ", Style::default()),
-                Span::styled(display_header, Style::default().fg(theme.primary).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    display_header,
+                    Style::default()
+                        .fg(theme.primary)
+                        .add_modifier(Modifier::BOLD),
+                ),
             ]),
             Line::from(Span::styled(
                 " ".repeat(area.width as usize),
                 Style::default().fg(theme.muted),
             )),
         ];
-        let header = Paragraph::new(header_lines)
-            .style(Style::default().bg(theme.background_secondary));
+        let header =
+            Paragraph::new(header_lines).style(Style::default().bg(theme.background_secondary));
         f.render_widget(header, header_area);
 
         // Render scrollable content
@@ -713,12 +828,16 @@ fn render_preview(
                     }
 
                     let line_num_style = if is_match_line {
-                        Style::default().fg(theme.primary).add_modifier(Modifier::BOLD)
+                        Style::default()
+                            .fg(theme.primary)
+                            .add_modifier(Modifier::BOLD)
                     } else {
                         Style::default().fg(theme.muted)
                     };
                     let normal_style = Style::default().fg(theme.foreground);
-                    let highlight_style = Style::default().fg(theme.warning).add_modifier(Modifier::BOLD);
+                    let highlight_style = Style::default()
+                        .fg(theme.warning)
+                        .add_modifier(Modifier::BOLD);
 
                     let wrapped_segments = wrap_line(line_content, content_width);
 
@@ -729,9 +848,7 @@ fn render_preview(
                             "     │ ".to_string()
                         };
 
-                        let mut spans = vec![
-                            Span::styled(prefix, line_num_style),
-                        ];
+                        let mut spans = vec![Span::styled(prefix, line_num_style)];
 
                         if !query_lower.is_empty() {
                             let seg_lower = segment.to_lowercase();
@@ -740,9 +857,15 @@ fn render_preview(
                             let mut last_end = 0;
 
                             let mut search_start = 0;
-                            while let Some(byte_pos) = seg_lower.get(search_start..).and_then(|s| s.find(&query_lower)) {
+                            while let Some(byte_pos) = seg_lower
+                                .get(search_start..)
+                                .and_then(|s| s.find(&query_lower))
+                            {
                                 let match_byte_start = search_start + byte_pos;
-                                let match_char_start = seg_lower.get(..match_byte_start).map(|s| s.chars().count()).unwrap_or(0);
+                                let match_char_start = seg_lower
+                                    .get(..match_byte_start)
+                                    .map(|s| s.chars().count())
+                                    .unwrap_or(0);
                                 let match_char_end = match_char_start + query_lower.chars().count();
 
                                 // Bounds check before slicing
@@ -750,12 +873,16 @@ fn render_preview(
                                 let safe_char_end = match_char_end.min(seg_chars_len);
 
                                 if safe_char_start > last_end && last_end < seg_chars_len {
-                                    let before: String = seg_chars[last_end..safe_char_start.min(seg_chars_len)].iter().collect();
+                                    let before: String = seg_chars
+                                        [last_end..safe_char_start.min(seg_chars_len)]
+                                        .iter()
+                                        .collect();
                                     spans.push(Span::styled(before, normal_style));
                                 }
 
                                 if safe_char_start < seg_chars_len {
-                                    let matched: String = seg_chars[safe_char_start..safe_char_end].iter().collect();
+                                    let matched: String =
+                                        seg_chars[safe_char_start..safe_char_end].iter().collect();
                                     spans.push(Span::styled(matched, highlight_style));
                                 }
 
@@ -825,15 +952,16 @@ fn render_preview(
                 Style::default().fg(theme.muted),
             )),
         ];
-        let header = Paragraph::new(header_lines)
-            .style(Style::default().bg(theme.background_secondary));
+        let header =
+            Paragraph::new(header_lines).style(Style::default().bg(theme.background_secondary));
         f.render_widget(header, header_area);
 
-        let empty_lines = vec![
-            Line::from(Span::styled(empty_message, Style::default().fg(theme.muted))),
-        ];
-        let empty = Paragraph::new(empty_lines)
-            .style(Style::default().bg(theme.background_secondary));
+        let empty_lines = vec![Line::from(Span::styled(
+            empty_message,
+            Style::default().fg(theme.muted),
+        ))];
+        let empty =
+            Paragraph::new(empty_lines).style(Style::default().bg(theme.background_secondary));
         f.render_widget(empty, content_area);
     }
 }

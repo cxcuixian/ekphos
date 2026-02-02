@@ -1,8 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::fs;
 use std::io::{BufReader, BufWriter};
-use serde::{Serialize, Deserialize};
+use std::path::{Path, PathBuf};
 
 const INDEX_VERSION: u32 = 2;
 
@@ -40,7 +40,10 @@ pub fn get_index_path(notes_dir: &Path) -> PathBuf {
         format!("{:016x}", hasher.finish())[..8].to_string()
     };
 
-    cache_base.join("ekphos").join(hash).join("search_index.bin")
+    cache_base
+        .join("ekphos")
+        .join(hash)
+        .join("search_index.bin")
 }
 
 /// Load index from disk
@@ -51,7 +54,7 @@ pub fn load_index(path: &Path) -> Option<SearchIndex> {
 
     // Check version compatibility
     if index.version != INDEX_VERSION {
-        return None;  // Rebuild if version mismatch
+        return None; // Rebuild if version mismatch
     }
 
     index.ready = true;
@@ -66,8 +69,7 @@ pub fn save_index(index: &SearchIndex, path: &Path) -> std::io::Result<()> {
     }
     let file = fs::File::create(path)?;
     let writer = BufWriter::new(file);
-    bincode::serialize_into(writer, index)
-        .map_err(std::io::Error::other)
+    bincode::serialize_into(writer, index).map_err(std::io::Error::other)
 }
 
 impl SearchIndex {
@@ -86,7 +88,8 @@ impl SearchIndex {
 
             // Tokenize: split on non-alphanumeric, keep words with 1-50 chars
             // Use chars().count() for proper Unicode support
-            for word in line.split(|c: char| !c.is_alphanumeric())
+            for word in line
+                .split(|c: char| !c.is_alphanumeric())
                 .filter(|w| (1..=50).contains(&w.chars().count()))
             {
                 let word_lower = word.to_lowercase();
@@ -105,7 +108,8 @@ impl SearchIndex {
             self.lines.push(Vec::new());
         }
         self.lines[note_idx] = lines;
-        self.file_meta.insert(rel_path.to_string(), (mtime, note_idx));
+        self.file_meta
+            .insert(rel_path.to_string(), (mtime, note_idx));
     }
 
     /// Check which files need re-indexing
@@ -127,7 +131,9 @@ impl SearchIndex {
         let current_set: std::collections::HashSet<_> = current_paths.iter().collect();
 
         // Find deleted files
-        let deleted: Vec<String> = self.file_meta.keys()
+        let deleted: Vec<String> = self
+            .file_meta
+            .keys()
             .filter(|p| !current_set.contains(p))
             .cloned()
             .collect();

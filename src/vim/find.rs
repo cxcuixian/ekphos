@@ -9,7 +9,11 @@ pub struct FindState {
 
 impl FindState {
     pub fn new(char: char, forward: bool, till: bool) -> Self {
-        Self { char, forward, till }
+        Self {
+            char,
+            forward,
+            till,
+        }
     }
 
     pub fn find_in_line(&self, line: &str, col: usize) -> Option<usize> {
@@ -18,7 +22,11 @@ impl FindState {
         if self.forward {
             for (i, &c) in chars.iter().enumerate().skip(col + 1) {
                 if c == self.char {
-                    return Some(if self.till { i.saturating_sub(1).max(col + 1) } else { i });
+                    return Some(if self.till {
+                        i.saturating_sub(1).max(col + 1)
+                    } else {
+                        i
+                    });
                 }
             }
         } else {
@@ -27,7 +35,11 @@ impl FindState {
             }
             for i in (0..col).rev() {
                 if chars.get(i) == Some(&self.char) {
-                    return Some(if self.till { (i + 1).min(col.saturating_sub(1)) } else { i });
+                    return Some(if self.till {
+                        (i + 1).min(col.saturating_sub(1))
+                    } else {
+                        i
+                    });
                 }
             }
         }

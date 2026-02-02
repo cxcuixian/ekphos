@@ -100,7 +100,10 @@ impl RegisterMap {
     }
 
     pub fn delete(&mut self, text: String, linewise: bool) {
-        let content = RegisterContent { text: text.clone(), linewise };
+        let content = RegisterContent {
+            text: text.clone(),
+            linewise,
+        };
         self.unnamed = content.clone();
 
         if let Some(reg) = self.selected.take() {
@@ -213,7 +216,13 @@ mod tests {
     fn test_all_lowercase_named_registers() {
         let mut regs = RegisterMap::new();
         for c in 'a'..='z' {
-            regs.set(c, RegisterContent { text: c.to_string(), linewise: false });
+            regs.set(
+                c,
+                RegisterContent {
+                    text: c.to_string(),
+                    linewise: false,
+                },
+            );
         }
         for c in 'a'..='z' {
             assert_eq!(regs.get(c).unwrap().text, c.to_string());
@@ -223,22 +232,46 @@ mod tests {
     #[test]
     fn test_append_to_named() {
         let mut regs = RegisterMap::new();
-        regs.set('a', RegisterContent { text: "hello".to_string(), linewise: false });
-        regs.set('A', RegisterContent { text: " world".to_string(), linewise: false });
+        regs.set(
+            'a',
+            RegisterContent {
+                text: "hello".to_string(),
+                linewise: false,
+            },
+        );
+        regs.set(
+            'A',
+            RegisterContent {
+                text: " world".to_string(),
+                linewise: false,
+            },
+        );
         assert_eq!(regs.get('a').unwrap().text, "hello world");
     }
 
     #[test]
     fn test_append_to_empty_register() {
         let mut regs = RegisterMap::new();
-        regs.set('A', RegisterContent { text: "hello".to_string(), linewise: false });
+        regs.set(
+            'A',
+            RegisterContent {
+                text: "hello".to_string(),
+                linewise: false,
+            },
+        );
         assert_eq!(regs.get('a').unwrap().text, "hello");
     }
 
     #[test]
     fn test_uppercase_get_returns_lowercase() {
         let mut regs = RegisterMap::new();
-        regs.set('a', RegisterContent { text: "hello".to_string(), linewise: false });
+        regs.set(
+            'a',
+            RegisterContent {
+                text: "hello".to_string(),
+                linewise: false,
+            },
+        );
         assert_eq!(regs.get('A').unwrap().text, "hello");
     }
 
@@ -256,7 +289,13 @@ mod tests {
         let mut regs = RegisterMap::new();
         for i in 0..=9 {
             let c = char::from_digit(i, 10).unwrap();
-            regs.set(c, RegisterContent { text: i.to_string(), linewise: false });
+            regs.set(
+                c,
+                RegisterContent {
+                    text: i.to_string(),
+                    linewise: false,
+                },
+            );
         }
         for i in 0..=9 {
             let c = char::from_digit(i, 10).unwrap();
@@ -353,7 +392,13 @@ mod tests {
     fn test_get_for_paste_selected() {
         let mut regs = RegisterMap::new();
         regs.yank("default".to_string(), false);
-        regs.set('a', RegisterContent { text: "from_a".to_string(), linewise: false });
+        regs.set(
+            'a',
+            RegisterContent {
+                text: "from_a".to_string(),
+                linewise: false,
+            },
+        );
         regs.select('a');
         assert_eq!(regs.get_for_paste().text, "from_a");
     }

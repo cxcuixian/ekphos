@@ -18,9 +18,7 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     let word_count = if let Some(note) = app.current_note() {
         note.content
             .split_whitespace()
-            .filter(|word| {
-                word.chars().any(|c| c.is_alphanumeric())
-            })
+            .filter(|word| word.chars().any(|c| c.is_alphanumeric()))
             .count()
     } else {
         0
@@ -179,9 +177,16 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
                 let match_info = if app.buffer_search.matches.is_empty() {
                     String::new()
                 } else {
-                    format!(" [{}/{}]", app.buffer_search.current_match_index + 1, app.buffer_search.matches.len())
+                    format!(
+                        " [{}/{}]",
+                        app.buffer_search.current_match_index + 1,
+                        app.buffer_search.matches.len()
+                    )
                 };
-                Some((format!("{}{}{}", prefix, vim.search_buffer, match_info), false))
+                Some((
+                    format!("{}{}{}", prefix, vim.search_buffer, match_info),
+                    false,
+                ))
             } else if let Some(ref msg) = vim.status_message {
                 Some((msg.clone(), true))
             } else {
@@ -201,10 +206,7 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
             .add_modifier(Modifier::BOLD),
     );
 
-    let separator1 = Span::styled(
-        "›",
-        Style::default().fg(statusbar.separator),
-    );
+    let separator1 = Span::styled("›", Style::default().fg(statusbar.separator));
 
     let mode = Span::styled(
         format!(" {} ", mode_text),
@@ -214,31 +216,34 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     // Pending info (operators, count, etc.)
     let pending = if !pending_info.is_empty() {
         vec![
-            Span::styled(
-                "›",
-                Style::default().fg(statusbar.separator),
-            ),
+            Span::styled("›", Style::default().fg(statusbar.separator)),
             Span::styled(
                 format!(" {} ", pending_info),
-                Style::default().fg(theme.warning).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(theme.warning)
+                    .add_modifier(Modifier::BOLD),
             ),
         ]
     } else {
         vec![]
     };
 
-    let separator2 = Span::styled(
-        "›",
-        Style::default().fg(statusbar.separator),
-    );
+    let separator2 = Span::styled("›", Style::default().fg(statusbar.separator));
 
     // Command input or file path (with optional status message for Normal mode)
     let (path_or_command, status_span) = if let Some((cmd, is_warning)) = command_input {
-        let color = if is_warning { theme.warning } else { theme.primary };
-        (Span::styled(
-            format!(" {}", cmd),
-            Style::default().fg(color).add_modifier(Modifier::BOLD),
-        ), None)
+        let color = if is_warning {
+            theme.warning
+        } else {
+            theme.primary
+        };
+        (
+            Span::styled(
+                format!(" {}", cmd),
+                Style::default().fg(color).add_modifier(Modifier::BOLD),
+            ),
+            None,
+        )
     } else {
         let path = Span::styled(
             format!(" {}", note_path),
@@ -247,7 +252,12 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         let status = normal_status.map(|msg| {
             vec![
                 Span::styled(" › ", Style::default().fg(statusbar.separator)),
-                Span::styled(msg, Style::default().fg(theme.warning).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    msg,
+                    Style::default()
+                        .fg(theme.warning)
+                        .add_modifier(Modifier::BOLD),
+                ),
             ]
         });
         (path, status)
@@ -256,12 +266,12 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     // Right side content
     // Recording indicator
     let recording_indicator = if app.mode == Mode::Edit && app.vim.macros.is_recording() {
-        vec![
-            Span::styled(
-                "● REC  ",
-                Style::default().fg(theme.error).add_modifier(Modifier::BOLD),
-            ),
-        ]
+        vec![Span::styled(
+            "● REC  ",
+            Style::default()
+                .fg(theme.error)
+                .add_modifier(Modifier::BOLD),
+        )]
     } else {
         vec![]
     };
@@ -275,23 +285,19 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         } else {
             "indexing  ".to_string()
         };
-        vec![
-            Span::styled(
-                progress_text,
-                Style::default().fg(theme.muted),
-            ),
-        ]
+        vec![Span::styled(
+            progress_text,
+            Style::default().fg(theme.muted),
+        )]
     } else {
         vec![]
     };
 
     let zen_indicator = if app.zen_mode {
-        vec![
-            Span::styled(
-                "zen  ",
-                Style::default().fg(theme.info).add_modifier(Modifier::BOLD),
-            ),
-        ]
+        vec![Span::styled(
+            "zen  ",
+            Style::default().fg(theme.info).add_modifier(Modifier::BOLD),
+        )]
     } else {
         vec![]
     };
@@ -306,10 +312,7 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         Style::default().fg(statusbar.mode),
     );
 
-    let help = Span::styled(
-        "  ? help ",
-        Style::default().fg(statusbar.mode),
-    );
+    let help = Span::styled("  ? help ", Style::default().fg(statusbar.mode));
 
     // Build layout
     let mut left_content = vec![brand, separator1, mode];
@@ -332,30 +335,44 @@ pub fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let left_width: usize = left_content.iter().map(|s| s.content.chars().count()).sum();
-    let right_width: usize = right_content.iter().map(|s| s.content.chars().count()).sum();
+    let right_width: usize = right_content
+        .iter()
+        .map(|s| s.content.chars().count())
+        .sum();
     let middle_padding = content_width.saturating_sub(left_width + right_width);
     let mut spans = Vec::new();
 
     if app.zen_mode {
         let left_margin = (area.width as usize).saturating_sub(content_width) / 2;
         if left_margin > 0 {
-            spans.push(Span::styled(" ".repeat(left_margin), Style::default().bg(statusbar.background)));
+            spans.push(Span::styled(
+                " ".repeat(left_margin),
+                Style::default().bg(statusbar.background),
+            ));
         }
     }
 
     spans.extend(left_content);
-    spans.push(Span::styled(" ".repeat(middle_padding), Style::default().bg(statusbar.background)));
+    spans.push(Span::styled(
+        " ".repeat(middle_padding),
+        Style::default().bg(statusbar.background),
+    ));
     spans.extend(right_content);
 
-    let current_width = spans.iter().map(|s| s.content.chars().count()).sum::<usize>();
+    let current_width = spans
+        .iter()
+        .map(|s| s.content.chars().count())
+        .sum::<usize>();
     let right_margin = (area.width as usize).saturating_sub(current_width);
     if right_margin > 0 {
-        spans.push(Span::styled(" ".repeat(right_margin), Style::default().bg(statusbar.background)));
+        spans.push(Span::styled(
+            " ".repeat(right_margin),
+            Style::default().bg(statusbar.background),
+        ));
     }
 
     let status_line = Line::from(spans);
-    let status_bar = Paragraph::new(status_line)
-        .style(Style::default().bg(statusbar.background));
+    let status_bar = Paragraph::new(status_line).style(Style::default().bg(statusbar.background));
 
     f.render_widget(status_bar, area);
 }

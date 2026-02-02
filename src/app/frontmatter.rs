@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::Deserialize;
+use std::collections::HashMap;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Default, Deserialize)]

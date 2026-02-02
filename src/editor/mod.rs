@@ -11,6 +11,8 @@ pub use input::{process_key, InputAction};
 // Re-export LineNumberMode for use in other modules
 pub use crate::config::LineNumberMode;
 
+use crate::snippets::parser::SnippetInstance;
+use crate::snippets::SnippetCollection;
 use buffer::TextBuffer;
 use cursor::Cursor;
 use history::{EditOperation, History};
@@ -415,6 +417,9 @@ pub struct Editor {
     scrolloff: usize,
     // Cursor shape for visual mode feedback
     cursor_shape: CursorShape,
+    // Snippet support
+    snippets: SnippetCollection,
+    active_snippet: Option<SnippetInstance>,
 }
 
 impl Default for Editor {
@@ -472,6 +477,8 @@ impl Editor {
             line_number_width: 4, // Default width for line numbers
             scrolloff: 0,
             cursor_shape: CursorShape::Block,
+            snippets: SnippetCollection::load_default(),
+            active_snippet: None,
         }
     }
 
@@ -2837,6 +2844,14 @@ impl Editor {
 
     // Input processing
     pub fn input(&mut self, key: KeyEvent) {
+        // Special handling for Tab key - try snippet expansion first
+        if key.code == crossterm::event::KeyCode::Tab {
+            if self.handle_tab() {
+                // Snippet was expanded or navigated, don't insert tab
+                return;
+            }
+        }
+
         match process_key(key) {
             InputAction::InsertChar(c) => self.insert_char(c),
             InputAction::InsertNewline => self.insert_newline(),
@@ -3638,5 +3653,194 @@ impl Editor {
     ) -> Style {
         let base_style = row_styles.get(col).copied().unwrap_or_default();
         self.apply_selection_style(base_style, row, col, selection, block_selection)
+    }
+
+    pub fn get_cursor_absolute_offset(&self) -> usize {
+        let pos = self.cursor.pos();
+        let mut offset = 0;
+        for i in 0..pos.row {
+            offset += self.buffer.line_len(i) + 1; // +1 for newline
+        }
+        offset + pos.col
+    }
+
+    // ==================== Snippet Support ====================
+
+    /// Check if there's an active snippet session
+    pub fn has_active_snippet(&self) -> bool {
+        self.active_snippet.is_some()
+    }
+
+    /// Try to expand a snippet at the current cursor position
+    /// Returns true if a snippet was expanded
+    pub fn try_expand_snippet(&mut self) -> bool {
+        let cursor_pos = self.cursor.pos();
+        let line = self.buffer.line(cursor_pos.row).unwrap_or("");
+
+        // Get text before cursor on current line
+        let chars: Vec<char> = line.chars().collect();
+        let before_cursor: String = chars.iter().take(cursor_pos.col).collect();
+
+        // Find word before cursor (alphanumeric and underscore)
+        let word_end = before_cursor.len();
+        let char_vec: Vec<(usize, char)> = before_cursor.chars().enumerate().collect();
+        let word_start = char_vec
+            .iter()
+            .rev()
+            .find(|(_, c)| !c.is_alphanumeric() && *c != '_')
+            .map(|(i, _)| i + 1)
+            .unwrap_or(0);
+
+        let word = &before_cursor[word_start..word_end];
+
+        // Try to find matching snippet
+        if let Some(snippet) = self.snippets.find_by_prefix(word) {
+            // Create snippet instance
+            if let mut instance = SnippetInstance::from_body(&snippet.body).unwrap_or_else(|| {
+                // If no tabstops, just return a dummy instance or handle separately
+                // but from_body returns None if no tabstops.
+                // For simplicity, let's just insert text and return true if None.
+                SnippetInstance {
+                    text: snippet.body.join("\n"),
+                    tabstops: vec![],
+                    current_tabstop: 0,
+                    base_offset: 0,
+                }
+            }) {
+                // Delete the prefix word
+                for _ in 0..word.len() {
+                    self.delete_newline();
+                }
+
+                // Record insertion point
+                instance.base_offset = self.get_cursor_absolute_offset();
+
+                // Insert the expanded text
+                let text = instance.text.clone();
+                for ch in text.chars() {
+                    if ch == '\n' {
+                        self.insert_newline();
+                    } else {
+                        self.insert_char(ch);
+                    }
+                }
+
+                if instance.tabstops.is_empty() {
+                    return true;
+                }
+
+                // Store the active snippet and select first tabstop
+                self.active_snippet = Some(instance);
+                self.select_current_tabstop();
+
+                // Check if we started at $0 (final tabstop)
+                let is_final = if let Some(ref instance) = self.active_snippet {
+                    instance.current().map(|t| t.index == 0).unwrap_or(false)
+                } else {
+                    false
+                };
+
+                if is_final {
+                    self.active_snippet = None;
+                    self.cursor.cancel_selection();
+                }
+
+                return true;
+            }
+        }
+
+        false
+    }
+
+    /// Navigate to the next tabstop in the active snippet
+    /// Returns true if navigation occurred
+    pub fn snippet_next_tabstop(&mut self) -> bool {
+        // First, get the next tabstop info without borrowing self
+        let next_tabstop = if let Some(ref mut instance) = self.active_snippet {
+            let base = instance.base_offset;
+            instance
+                .next()
+                .map(|t| (base + t.start_pos, base + t.end_pos, t.index))
+        } else {
+            None
+        };
+
+        if let Some((start_pos, end_pos, index)) = next_tabstop {
+            // Move cursor to tabstop position
+            self.select_tabstop_range(start_pos, end_pos);
+
+            if index == 0 {
+                self.active_snippet = None;
+                self.cursor.cancel_selection();
+            }
+            true
+        } else {
+            // No more tabstops, clear active snippet
+            self.active_snippet = None;
+            false
+        }
+    }
+
+    /// Select the current tabstop range
+    fn select_current_tabstop(&mut self) {
+        let current_range = if let Some(ref instance) = self.active_snippet {
+            let base = instance.base_offset;
+            instance
+                .current_range()
+                .map(|(start, end)| (base + start, base + end))
+        } else {
+            None
+        };
+
+        if let Some((start, end)) = current_range {
+            self.select_tabstop_range(start, end);
+        }
+    }
+
+    /// Select a range by byte positions in the document
+    fn select_tabstop_range(&mut self, start_pos: usize, end_pos: usize) {
+        // Convert byte position to row/col
+        let mut current_pos = 0;
+        let mut target_row = 0;
+        let mut target_col = 0;
+
+        for (row, line) in self.buffer.lines().iter().enumerate() {
+            let line_len = line.len();
+            let line_with_newline = line_len + 1;
+
+            if current_pos + line_with_newline > start_pos || row == self.buffer.line_count() - 1 {
+                target_row = row;
+                target_col = start_pos.saturating_sub(current_pos);
+                break;
+            }
+            current_pos += line_with_newline;
+        }
+
+        // Move cursor to start position
+        self.cursor.move_to(target_row, target_col);
+
+        if start_pos != end_pos {
+            self.cursor.start_selection();
+            // Move to end position to complete selection
+            let end_col = target_col + (end_pos - start_pos);
+            self.cursor.move_to(target_row, end_col);
+        } else {
+            self.cursor.cancel_selection();
+        }
+    }
+
+    /// Handle Tab key - expand snippet or navigate tabstop
+    /// Returns true if snippet action was taken
+    pub fn handle_tab(&mut self) -> bool {
+        if self.has_active_snippet() {
+            self.snippet_next_tabstop()
+        } else {
+            self.try_expand_snippet()
+        }
+    }
+
+    /// Clear the active snippet session
+    pub fn clear_snippet(&mut self) {
+        self.active_snippet = None;
     }
 }

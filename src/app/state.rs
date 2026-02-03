@@ -381,7 +381,7 @@ pub enum SearchPickerState {
 pub struct CommandResult {
     /// Display name shown in the list (e.g., "Theme: Dracula")
     pub display_name: String,
-    /// Unique identifier for the command action (e.g., "theme:dracula")
+    /// Unique identifier for the command action (e.g., "theme:catppuccin-frappe")
     pub action_id: String,
     /// Fuzzy match score (higher is better)
     pub score: i32,
@@ -6104,10 +6104,10 @@ impl App {
         let mut commands = Vec::new();
 
         let available_themes = self.get_available_themes();
-        for theme_name in available_themes {
+        for (display_name, theme_stem) in available_themes {
             commands.push(CommandResult {
-                display_name: format!("Theme: {}", theme_name),
-                action_id: format!("theme:{}", theme_name.to_lowercase().replace(' ', "-")),
+                display_name: format!("Theme: {}", display_name),
+                action_id: format!("theme:{}", theme_stem),
                 score: 0,
             });
         }
@@ -6132,37 +6132,42 @@ impl App {
         scored
     }
 
-    fn get_available_themes(&self) -> Vec<String> {
+    fn get_available_themes(&self) -> Vec<(String, String)> {
         use std::fs;
-        let mut themes = vec!["Ekphos Dawn".to_string(), "Dracula".to_string()];
+        let mut themes = vec![
+            (
+                "Catppuccin Latte".to_string(),
+                "catppuccin-latte".to_string(),
+            ),
+            (
+                "Catppuccin Frappe".to_string(),
+                "catppuccin-frappe".to_string(),
+            ),
+        ];
 
-        if let Some(config_dir) = dirs::config_dir() {
-            let themes_dir = config_dir.join("ekphos").join("themes");
-            if let Ok(entries) = fs::read_dir(&themes_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.extension().map(|e| e == "toml").unwrap_or(false) {
-                        if let Some(stem) = path.file_stem() {
-                            let name = stem.to_string_lossy().to_string();
-                            let display_name = name
-                                .split('-')
-                                .map(|s| {
-                                    let mut c = s.chars();
-                                    match c.next() {
-                                        None => String::new(),
-                                        Some(f) => {
-                                            f.to_uppercase().collect::<String>() + c.as_str()
-                                        }
-                                    }
-                                })
-                                .collect::<Vec<_>>()
-                                .join(" ");
-                            if !themes
-                                .iter()
-                                .any(|t| t.to_lowercase() == display_name.to_lowercase())
-                            {
-                                themes.push(display_name);
-                            }
+        let themes_dir = crate::config::Config::themes_dir();
+        if let Ok(entries) = fs::read_dir(&themes_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().map(|e| e == "toml").unwrap_or(false) {
+                    if let Some(stem) = path.file_stem() {
+                        let name = stem.to_string_lossy().to_string();
+                        let display_name = name
+                            .split('-')
+                            .map(|s| {
+                                let mut c = s.chars();
+                                match c.next() {
+                                    None => String::new(),
+                                    Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" ");
+                        if !themes
+                            .iter()
+                            .any(|(d, _)| d.to_lowercase() == display_name.to_lowercase())
+                        {
+                            themes.push((display_name, name));
                         }
                     }
                 }
@@ -6189,9 +6194,9 @@ impl App {
                             .join(" ");
                         if !themes
                             .iter()
-                            .any(|t| t.to_lowercase() == display_name.to_lowercase())
+                            .any(|(d, _)| d.to_lowercase() == display_name.to_lowercase())
                         {
-                            themes.push(display_name);
+                            themes.push((display_name, name));
                         }
                     }
                 }
@@ -6210,8 +6215,7 @@ impl App {
     fn switch_theme(&mut self, theme_id: &str) {
         use crate::config::Theme;
 
-        let theme_name = theme_id.replace('-', " ");
-        let new_theme = Theme::from_name(&theme_name);
+        let new_theme = Theme::from_name(theme_id);
         self.theme = new_theme;
 
         self.editor.set_block(

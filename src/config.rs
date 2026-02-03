@@ -96,7 +96,7 @@ fn default_show_empty_dir() -> bool {
     true
 }
 fn default_theme_name() -> String {
-    "ekphos-dawn".to_string()
+    "catppuccin-frappe".to_string()
 }
 fn default_syntax_theme() -> String {
     "base16-ocean.dark".to_string()
@@ -166,10 +166,16 @@ impl Config {
             let _ = fs::create_dir_all(&themes_dir);
         }
 
-        let default_theme_path = themes_dir.join("ekphos-dawn.toml");
-        if !default_theme_path.exists() {
-            let default_theme_content = include_str!("../themes/ekphos-dawn.toml");
-            let _ = fs::write(&default_theme_path, default_theme_content);
+        let latte_theme_path = themes_dir.join("catppuccin-latte.toml");
+        if !latte_theme_path.exists() {
+            let content = include_str!("../themes/catppuccin-latte.toml");
+            let _ = fs::write(&latte_theme_path, content);
+        }
+
+        let frappe_theme_path = themes_dir.join("catppuccin-frappe.toml");
+        if !frappe_theme_path.exists() {
+            let content = include_str!("../themes/catppuccin-frappe.toml");
+            let _ = fs::write(&frappe_theme_path, content);
         }
 
         if !config_path.exists() {
@@ -608,8 +614,8 @@ impl ThemeFile {
 
     fn get_bundled_theme(name: &str) -> Option<Self> {
         let content = match name {
-            "ekphos-dawn" => include_str!("../themes/ekphos-dawn.toml"),
-            "dracula" => include_str!("../themes/dracula.toml"),
+            "catppuccin-latte" => include_str!("../themes/catppuccin-latte.toml"),
+            "catppuccin-frappe" => include_str!("../themes/catppuccin-frappe.toml"),
             _ => return None,
         };
         Self::load_from_str(content)

@@ -1,0 +1,87 @@
+# Catppuccin Frappe
+# A dark theme for Ekphos
+
+[base]
+background = "#303446"
+background_secondary = "#292c3c"
+foreground = "#c6d0f5"
+muted = "#a5adce"
+
+[accent]
+primary = "#8caaee"
+secondary = "#f4b8e4"
+
+[semantic]
+error = "#e78284"
+warning = "#e5c890"
+success = "#a6d189"
+info = "#99d1db"
+
+[ui]
+border = "#626880"
+border_focused = "#8caaee"
+selection = "#51576d"
+cursor = "#f2d5cf"
+
+[ui.statusbar]
+background = "#292c3c"
+foreground = "#c6d0f5"
+brand = "#8caaee"
+mode = "#a5adce"
+separator = "#626880"
+
+[ui.dialog]
+background = "#303446"
+border = "#8caaee"
+title = "#8caaee"
+text = "#c6d0f5"
+
+[ui.sidebar]
+background = "#292c3c"
+item = "#c6d0f5"
+item_selected = "#ef9f76"
+folder = "#81c8be"
+folder_expanded = "#99d1db"
+
+[ui.content]
+background = "#303446"
+text = "#c6d0f5"
+heading1 = "#8caaee"
+heading2 = "#a6d189"
+heading3 = "#e5c890"
+heading4 = "#ca9ee6"
+link = "#99d1db"
+link_invalid = "#e78284"
+code = "#a6d189"
+code_background = "#292c3c"
+blockquote = "#a5adce"
+list_marker = "#ca9ee6"
+
+[ui.outline]
+background = "#292c3c"
+heading1 = "#8caaee"
+heading2 = "#a6d189"
+heading3 = "#e5c890"
+heading4 = "#ca9ee6"
+
+[ui.search]
+background = "#292c3c"
+border = "#8caaee"
+input = "#c6d0f5"
+match_highlight = "#ef9f76"
+match_current = "#e78284"
+match_count = "#a5adce"
+
+[ui.editor]
+heading1 = "#8caaee"
+heading2 = "#a6d189"
+heading3 = "#e5c890"
+heading4 = "#ca9ee6"
+heading5 = "#99d1db"
+heading6 = "#a5adce"
+code = "#a6d189"
+link = "#99d1db"
+blockquote = "#a5adce"
+list_marker = "#ca9ee6"
+bold = "#e5c890"
+italic = "#81c8be"

@@ -92,7 +92,7 @@ fn reset_config_and_themes() {
     println!("  Created: {}", config_path.display());
     println!(
         "  Created: {}",
-        themes_dir.join("ekphos-dawn.toml").display()
+        themes_dir.join("catppuccin-frappe.toml").display()
     );
 
     println!();

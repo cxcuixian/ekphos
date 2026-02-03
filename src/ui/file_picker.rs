@@ -23,6 +23,7 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
         query,
         file_results,
         content_results,
+        command_results,
         selected_index,
         scroll_offset,
         search_in_progress,
@@ -79,6 +80,11 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
                 };
                 (content_results.len(), height)
             }
+            SearchPickerMode::Commands => {
+                let visible_items = command_results.len().min(POPUP_MAX_VISIBLE_ITEMS);
+                let height = visible_items.max(POPUP_MIN_CONTENT_HEIGHT);
+                (command_results.len(), height)
+            }
         };
 
         // Add 1 for top padding, 2 for mode tabs + input line, 1 for spacing, 1 for separator, plus 2 for borders, +1 for bottom padding
@@ -94,8 +100,12 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
         f.render_widget(Clear, popup_area);
 
         // Render the main popup border first
+        let title = match mode {
+            SearchPickerMode::Commands => " Command Palette (Ctrl+P) ",
+            _ => " Search (Ctrl+K) ",
+        };
         let popup_block = Block::default()
-            .title(" Search (Ctrl+K) ")
+            .title(title)
             .title_bottom(
                 Line::from(if results_len == 0 {
                     if *search_in_progress {
@@ -129,38 +139,42 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
         header_lines.push(Line::from(""));
 
         // Mode tabs line
-        let files_style = if *mode == SearchPickerMode::Files {
-            Style::default()
-                .fg(theme.primary)
-                .add_modifier(Modifier::BOLD)
-        } else {
-            Style::default().fg(theme.muted)
-        };
-        let content_style = if *mode == SearchPickerMode::Content {
-            Style::default()
-                .fg(theme.primary)
-                .add_modifier(Modifier::BOLD)
-        } else {
-            Style::default().fg(theme.muted)
-        };
+        if *mode != SearchPickerMode::Commands {
+            let files_style = if *mode == SearchPickerMode::Files {
+                Style::default()
+                    .fg(theme.primary)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.muted)
+            };
+            let content_style = if *mode == SearchPickerMode::Content {
+                Style::default()
+                    .fg(theme.primary)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(theme.muted)
+            };
 
-        header_lines.push(Line::from(vec![
-            Span::raw(" "),
-            Span::styled("← ", Style::default().fg(theme.muted)),
-            Span::styled("Files", files_style),
-            Span::styled(" | ", Style::default().fg(theme.muted)),
-            Span::styled("Content", content_style),
-            Span::styled(" →", Style::default().fg(theme.muted)),
-        ]));
+            header_lines.push(Line::from(vec![
+                Span::raw(" "),
+                Span::styled("← ", Style::default().fg(theme.muted)),
+                Span::styled("Files", files_style),
+                Span::styled(" | ", Style::default().fg(theme.muted)),
+                Span::styled("Content", content_style),
+                Span::styled(" →", Style::default().fg(theme.muted)),
+            ]));
+        } else {
+            header_lines.push(Line::from(""));
+        }
 
         // Empty line for spacing
         header_lines.push(Line::from(""));
 
         // Input line
-        let placeholder = if *mode == SearchPickerMode::Files {
-            "Search notes..."
-        } else {
-            "Search content..."
+        let placeholder = match mode {
+            SearchPickerMode::Files => "Search notes...",
+            SearchPickerMode::Content => "Search content...",
+            SearchPickerMode::Commands => "Search commands...",
         };
 
         let input_line = if query.is_empty() {
@@ -327,6 +341,31 @@ pub fn render_search_picker(f: &mut Frame, app: &mut App) {
                         render_content_results(
                             &mut result_lines,
                             content_results,
+                            *selected_index,
+                            *scroll_offset,
+                            max_name_width,
+                            results_area.width,
+                            theme,
+                        );
+                    }
+                }
+                SearchPickerMode::Commands => {
+                    if command_results.is_empty() {
+                        result_lines.push(Line::from(vec![
+                            Span::raw(" "),
+                            Span::styled(
+                                if query.is_empty() {
+                                    "Type to search commands..."
+                                } else {
+                                    "No matching commands"
+                                },
+                                Style::default().fg(theme.muted),
+                            ),
+                        ]));
+                    } else {
+                        render_command_results(
+                            &mut result_lines,
+                            command_results,
                             *selected_index,
                             *scroll_offset,
                             max_name_width,
@@ -992,4 +1031,59 @@ fn wrap_line(line: &str, max_width: usize) -> Vec<String> {
     }
 
     segments
+}
+
+fn render_command_results(
+    lines: &mut Vec<Line>,
+    results: &[crate::app::CommandResult],
+    selected_index: usize,
+    scroll_offset: usize,
+    max_name_width: usize,
+    popup_width: u16,
+    theme: &crate::config::Theme,
+) {
+    for (idx, result) in results
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(POPUP_MAX_VISIBLE_ITEMS)
+    {
+        let is_selected = idx == selected_index;
+
+        let display_name = if result.display_name.chars().count() > max_name_width {
+            let truncated: String = result
+                .display_name
+                .chars()
+                .take(max_name_width.saturating_sub(1))
+                .collect();
+            format!("{}…", truncated)
+        } else {
+            result.display_name.clone()
+        };
+
+        let style = if is_selected {
+            Style::default()
+                .fg(theme.background)
+                .bg(theme.primary)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(theme.foreground)
+        };
+
+        if is_selected {
+            let content_width = (popup_width as usize).saturating_sub(2);
+            let used_width = 1 + display_name.chars().count();
+            let padding_right = " ".repeat(content_width.saturating_sub(used_width));
+            lines.push(Line::from(vec![
+                Span::styled(" ".to_string(), style),
+                Span::styled(display_name, style),
+                Span::styled(padding_right, style),
+            ]));
+        } else {
+            lines.push(Line::from(vec![
+                Span::raw(" "),
+                Span::styled(display_name, style),
+            ]));
+        }
+    }
 }

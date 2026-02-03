@@ -357,6 +357,7 @@ pub enum SearchPickerMode {
     #[default]
     Files,
     Content,
+    Commands,
 }
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum SearchPickerState {
@@ -367,11 +368,23 @@ pub enum SearchPickerState {
         query: String,
         file_results: Vec<FilePickerResult>,
         content_results: Vec<ContentSearchResult>,
+        command_results: Vec<CommandResult>,
         selected_index: usize,
         scroll_offset: usize,
         search_in_progress: bool,
         search_id: u64,
     },
+}
+
+/// A command that can be executed from the command palette
+#[derive(Debug, Clone, PartialEq)]
+pub struct CommandResult {
+    /// Display name shown in the list (e.g., "Theme: Dracula")
+    pub display_name: String,
+    /// Unique identifier for the command action (e.g., "theme:dracula")
+    pub action_id: String,
+    /// Fuzzy match score (higher is better)
+    pub score: i32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -5404,6 +5417,7 @@ impl App {
             query: String::new(),
             file_results: Vec::new(),
             content_results: Vec::new(),
+            command_results: Vec::new(),
             selected_index: 0,
             scroll_offset: 0,
             search_in_progress: false,
@@ -5427,6 +5441,7 @@ impl App {
             *mode = match *mode {
                 SearchPickerMode::Files => SearchPickerMode::Content,
                 SearchPickerMode::Content => SearchPickerMode::Files,
+                SearchPickerMode::Commands => return,
             };
             // Reset selection and scroll
             *selected_index = 0;
@@ -5454,6 +5469,7 @@ impl App {
                     }
                 }
             }
+            SearchPickerMode::Commands => {}
         }
     }
 
@@ -5730,6 +5746,20 @@ impl App {
                     self.start_content_search();
                 }
             }
+            SearchPickerMode::Commands => {
+                let new_results = self.build_command_list(&query);
+                if let SearchPickerState::Open {
+                    command_results,
+                    selected_index,
+                    scroll_offset,
+                    ..
+                } = &mut self.search_picker
+                {
+                    *command_results = new_results;
+                    *selected_index = 0;
+                    *scroll_offset = 0;
+                }
+            }
         }
     }
 
@@ -5738,6 +5768,7 @@ impl App {
             mode,
             file_results,
             content_results,
+            command_results,
             selected_index,
             ..
         } = &self.search_picker
@@ -5749,6 +5780,14 @@ impl App {
                 SearchPickerMode::Content => content_results
                     .get(*selected_index)
                     .map(|r| (r.note_index, Some(r.line_number))),
+                SearchPickerMode::Commands => {
+                    if let Some(result) = command_results.get(*selected_index) {
+                        let action_id = result.action_id.clone();
+                        self.search_picker = SearchPickerState::Closed;
+                        self.execute_command(&action_id);
+                    }
+                    return;
+                }
             }
         } else {
             None
@@ -5851,10 +5890,12 @@ impl App {
         // Must match POPUP_MAX_VISIBLE_ITEMS / POPUP_MAX_VISIBLE_ITEMS_CONTENT in ui/file_picker.rs
         const MAX_VISIBLE_FILES: usize = 10;
         const MAX_VISIBLE_CONTENT: usize = 18;
+        const MAX_VISIBLE_COMMANDS: usize = 10;
         if let SearchPickerState::Open {
             mode,
             file_results,
             content_results,
+            command_results,
             selected_index,
             scroll_offset,
             ..
@@ -5863,6 +5904,7 @@ impl App {
             let (results_len, max_visible) = match mode {
                 SearchPickerMode::Files => (file_results.len(), MAX_VISIBLE_FILES),
                 SearchPickerMode::Content => (content_results.len(), MAX_VISIBLE_CONTENT),
+                SearchPickerMode::Commands => (command_results.len(), MAX_VISIBLE_COMMANDS),
             };
 
             if results_len == 0 {
@@ -5887,10 +5929,12 @@ impl App {
         // Must match POPUP_MAX_VISIBLE_ITEMS / POPUP_MAX_VISIBLE_ITEMS_CONTENT in ui/file_picker.rs
         const MAX_VISIBLE_FILES: usize = 10;
         const MAX_VISIBLE_CONTENT: usize = 18;
+        const MAX_VISIBLE_COMMANDS: usize = 10;
         if let SearchPickerState::Open {
             mode,
             file_results,
             content_results,
+            command_results,
             selected_index,
             scroll_offset,
             ..
@@ -5899,6 +5943,7 @@ impl App {
             let (results_len, max_visible) = match mode {
                 SearchPickerMode::Files => (file_results.len(), MAX_VISIBLE_FILES),
                 SearchPickerMode::Content => (content_results.len(), MAX_VISIBLE_CONTENT),
+                SearchPickerMode::Commands => (command_results.len(), MAX_VISIBLE_COMMANDS),
             };
 
             if results_len == 0 {
@@ -5957,6 +6002,7 @@ impl App {
             mode,
             file_results,
             content_results,
+            command_results,
             selected_index,
             scroll_offset,
             ..
@@ -5979,11 +6025,13 @@ impl App {
 
                     target_index.unwrap_or(*scroll_offset + clicked_row)
                 }
+                SearchPickerMode::Commands => *scroll_offset + clicked_row,
             };
 
             let results_len = match mode {
                 SearchPickerMode::Files => file_results.len(),
                 SearchPickerMode::Content => content_results.len(),
+                SearchPickerMode::Commands => command_results.len(),
             };
 
             if clicked_index < results_len {
@@ -6015,10 +6063,12 @@ impl App {
     pub fn search_picker_scroll_down(&mut self) {
         const MAX_VISIBLE_FILES: usize = 10; // Must match POPUP_MAX_VISIBLE_ITEMS
         const MAX_VISIBLE_CONTENT: usize = 18; // Must match POPUP_MAX_VISIBLE_ITEMS_CONTENT
+        const MAX_VISIBLE_COMMANDS: usize = 10;
         if let SearchPickerState::Open {
             mode,
             file_results,
             content_results,
+            command_results,
             scroll_offset,
             ..
         } = &mut self.search_picker
@@ -6026,12 +6076,157 @@ impl App {
             let (results_len, max_visible) = match mode {
                 SearchPickerMode::Files => (file_results.len(), MAX_VISIBLE_FILES),
                 SearchPickerMode::Content => (content_results.len(), MAX_VISIBLE_CONTENT),
+                SearchPickerMode::Commands => (command_results.len(), MAX_VISIBLE_COMMANDS),
             };
 
             if *scroll_offset + max_visible < results_len {
                 *scroll_offset += 1;
             }
         }
+    }
+
+    pub fn open_command_palette(&mut self) {
+        let commands = self.build_command_list("");
+        self.search_picker = SearchPickerState::Open {
+            mode: SearchPickerMode::Commands,
+            query: String::new(),
+            file_results: Vec::new(),
+            content_results: Vec::new(),
+            command_results: commands,
+            selected_index: 0,
+            scroll_offset: 0,
+            search_in_progress: false,
+            search_id: 0,
+        };
+    }
+
+    pub fn build_command_list(&self, query: &str) -> Vec<CommandResult> {
+        let mut commands = Vec::new();
+
+        let available_themes = self.get_available_themes();
+        for theme_name in available_themes {
+            commands.push(CommandResult {
+                display_name: format!("Theme: {}", theme_name),
+                action_id: format!("theme:{}", theme_name.to_lowercase().replace(' ', "-")),
+                score: 0,
+            });
+        }
+
+        if query.is_empty() {
+            return commands;
+        }
+
+        let mut scored: Vec<CommandResult> = commands
+            .into_iter()
+            .filter_map(|mut cmd| {
+                if let Some(score) = fuzzy_match(&cmd.display_name, query) {
+                    cmd.score = score;
+                    Some(cmd)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        scored.sort_by(|a, b| b.score.cmp(&a.score));
+        scored
+    }
+
+    fn get_available_themes(&self) -> Vec<String> {
+        use std::fs;
+        let mut themes = vec!["Ekphos Dawn".to_string(), "Dracula".to_string()];
+
+        if let Some(config_dir) = dirs::config_dir() {
+            let themes_dir = config_dir.join("ekphos").join("themes");
+            if let Ok(entries) = fs::read_dir(&themes_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().map(|e| e == "toml").unwrap_or(false) {
+                        if let Some(stem) = path.file_stem() {
+                            let name = stem.to_string_lossy().to_string();
+                            let display_name = name
+                                .split('-')
+                                .map(|s| {
+                                    let mut c = s.chars();
+                                    match c.next() {
+                                        None => String::new(),
+                                        Some(f) => {
+                                            f.to_uppercase().collect::<String>() + c.as_str()
+                                        }
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                                .join(" ");
+                            if !themes
+                                .iter()
+                                .any(|t| t.to_lowercase() == display_name.to_lowercase())
+                            {
+                                themes.push(display_name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let bundled_themes_dir = std::path::PathBuf::from("themes");
+        if let Ok(entries) = fs::read_dir(&bundled_themes_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().map(|e| e == "toml").unwrap_or(false) {
+                    if let Some(stem) = path.file_stem() {
+                        let name = stem.to_string_lossy().to_string();
+                        let display_name = name
+                            .split('-')
+                            .map(|s| {
+                                let mut c = s.chars();
+                                match c.next() {
+                                    None => String::new(),
+                                    Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" ");
+                        if !themes
+                            .iter()
+                            .any(|t| t.to_lowercase() == display_name.to_lowercase())
+                        {
+                            themes.push(display_name);
+                        }
+                    }
+                }
+            }
+        }
+
+        themes
+    }
+
+    pub fn execute_command(&mut self, action_id: &str) {
+        if let Some(theme_name) = action_id.strip_prefix("theme:") {
+            self.switch_theme(theme_name);
+        }
+    }
+
+    fn switch_theme(&mut self, theme_id: &str) {
+        use crate::config::Theme;
+
+        let theme_name = theme_id.replace('-', " ");
+        let new_theme = Theme::from_name(&theme_name);
+        self.theme = new_theme;
+
+        self.editor.set_block(
+            ratatui::widgets::Block::default()
+                .borders(ratatui::widgets::Borders::ALL)
+                .border_style(ratatui::style::Style::default().fg(self.theme.primary))
+                .title(" NORMAL | Ctrl+S: Save, Esc: Exit "),
+        );
+        self.editor.set_selection_style(
+            ratatui::style::Style::default()
+                .fg(self.theme.foreground)
+                .bg(self.theme.selection),
+        );
+
+        self.needs_full_clear = true;
     }
 }
 

@@ -66,3 +66,8 @@ To contribute to the documentation, see [ekphos-docs](https://github.com/hanebox
 ## License
 
 MIT
+
+# TODO  
+- [x] Open current folder 
+- [x] Snippets 
+

@@ -2185,6 +2185,9 @@ fn handle_normal_mode(app: &mut App, key: crossterm::event::KeyEvent) -> bool {
         KeyCode::Char('k') if key.modifiers == KeyModifiers::CONTROL => {
             app.open_search_picker();
         }
+        KeyCode::Char('p') if key.modifiers == KeyModifiers::CONTROL => {
+            app.open_command_palette();
+        }
         KeyCode::Down | KeyCode::Char('j') => match app.focus {
             Focus::Sidebar => app.next_sidebar_item(),
             Focus::Outline => app.next_outline(),

@@ -8,6 +8,7 @@ mod outline;
 mod search_dialog;
 mod sidebar;
 mod status_bar;
+mod tabs;
 mod wiki_autocomplete;
 
 use ratatui::{
@@ -73,10 +74,21 @@ pub fn render(f: &mut Frame, app: &mut App) {
     // Render left sidebar (notes list)
     render_sidebar(f, app, chunks[0]);
 
+    let content_area = if !app.open_tabs.is_empty() {
+        let content_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(1), Constraint::Min(1)])
+            .split(chunks[1]);
+        tabs::render_tabs(f, app, content_chunks[0]);
+        content_chunks[1]
+    } else {
+        chunks[1]
+    };
+
     // Render content (either view or edit mode)
     match app.mode {
-        Mode::Normal => render_content(f, app, chunks[1]),
-        Mode::Edit => render_editor(f, app, chunks[1]),
+        Mode::Normal => render_content(f, app, content_area),
+        Mode::Edit => render_editor(f, app, content_area),
     }
 
     // Render right sidebar (outline)

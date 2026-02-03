@@ -615,6 +615,8 @@ pub struct App {
     pub highlight_version: u64,
     /// Whether there's a pending highlight request waiting for results
     pub highlight_pending: bool,
+    /// List of open note paths for tabs
+    pub open_tabs: Vec<PathBuf>,
 }
 
 #[allow(dead_code)]
@@ -798,6 +800,7 @@ impl App {
             highlight_worker: Some(HighlightWorker::new()),
             highlight_version: 0,
             highlight_pending: false,
+            open_tabs: Vec::new(),
         };
 
         if !is_first_launch && notes_dir_exists {
@@ -976,6 +979,7 @@ impl App {
             highlight_worker: Some(HighlightWorker::new()),
             highlight_version: 0,
             highlight_pending: false,
+            open_tabs: Vec::new(),
         };
 
         if notes_dir_exists {
@@ -1018,6 +1022,13 @@ impl App {
             self.selected_note = note_idx;
             self.update_content_items();
             self.update_outline();
+
+            // Add to tabs if not already present
+            if let Some(ref path) = self.notes[note_idx].file_path {
+                if !self.open_tabs.contains(path) {
+                    self.open_tabs.push(path.clone());
+                }
+            }
         }
     }
 
@@ -1140,6 +1151,9 @@ impl App {
         self.sort_tree();
 
         self.rebuild_sidebar_items();
+
+        // Cleanup open_tabs (remove paths that no longer exist)
+        self.open_tabs.retain(|path| path.exists());
 
         self.selected_sidebar_index = 0;
         self.sync_selected_note_from_sidebar();
@@ -1413,6 +1427,84 @@ impl App {
             }
             self.selected_note = new_note_idx;
             self.current_image = None;
+
+            // Add to tabs if not already present
+            if let Some(ref path) = self.notes[new_note_idx].file_path {
+                if !self.open_tabs.contains(path) {
+                    self.open_tabs.push(path.clone());
+                }
+            }
+        }
+    }
+
+    pub fn next_tab(&mut self) {
+        if self.open_tabs.is_empty() {
+            return;
+        }
+
+        let current_path = match self
+            .notes
+            .get(self.selected_note)
+            .and_then(|n| n.file_path.as_ref())
+        {
+            Some(p) => p,
+            None => return,
+        };
+
+        if let Some(pos) = self.open_tabs.iter().position(|p| p == current_path) {
+            let next_pos = (pos + 1) % self.open_tabs.len();
+            let next_path = self.open_tabs[next_pos].clone();
+            self.select_note_by_path(&next_path);
+        }
+    }
+
+    pub fn prev_tab(&mut self) {
+        if self.open_tabs.is_empty() {
+            return;
+        }
+
+        let current_path = match self
+            .notes
+            .get(self.selected_note)
+            .and_then(|n| n.file_path.as_ref())
+        {
+            Some(p) => p,
+            None => return,
+        };
+
+        if let Some(pos) = self.open_tabs.iter().position(|p| p == current_path) {
+            let prev_pos = if pos == 0 {
+                self.open_tabs.len() - 1
+            } else {
+                pos - 1
+            };
+            let prev_path = self.open_tabs[prev_pos].clone();
+            self.select_note_by_path(&prev_path);
+        }
+    }
+
+    pub fn close_current_tab(&mut self) {
+        if self.open_tabs.is_empty() {
+            return;
+        }
+
+        let current_path = match self
+            .notes
+            .get(self.selected_note)
+            .and_then(|n| n.file_path.as_ref())
+        {
+            Some(p) => p,
+            None => return,
+        };
+
+        if let Some(pos) = self.open_tabs.iter().position(|p| p == current_path) {
+            self.open_tabs.remove(pos);
+
+            if !self.open_tabs.is_empty() {
+                let new_pos = pos.min(self.open_tabs.len() - 1);
+                let new_path = self.open_tabs[new_pos].clone();
+                self.select_note_by_path(&new_path);
+            }
         }
     }
 
@@ -1603,6 +1695,10 @@ impl App {
 
                 if let Some(ref old_path) = self.notes[note_index].file_path {
                     if fs::rename(old_path, &new_file_path).is_ok() {
+                        if let Some(pos) = self.open_tabs.iter().position(|p| p == old_path) {
+                            self.open_tabs[pos] = new_file_path.clone();
+                        }
+
                         self.load_notes_from_dir();
 
                         let new_name_owned = new_name.to_string();
@@ -1649,6 +1745,12 @@ impl App {
                 }
 
                 if fs::rename(&old_path, &new_path).is_ok() {
+                    for tab_path in self.open_tabs.iter_mut() {
+                        if let Ok(suffix) = tab_path.strip_prefix(&old_path) {
+                            *tab_path = new_path.join(suffix);
+                        }
+                    }
+
                     if let Some(expanded) = self.folder_states.remove(&old_path) {
                         self.folder_states.insert(new_path.clone(), expanded);
                     }

@@ -2367,6 +2367,12 @@ fn handle_normal_mode(app: &mut App, key: crossterm::event::KeyEvent) -> bool {
                 app.toggle_current_heading_fold();
             }
         }
+        KeyCode::Char('L') => {
+            app.next_tab();
+        }
+        KeyCode::Char('H') => {
+            app.prev_tab();
+        }
         KeyCode::Char('g') => {
             if was_pending_g {
                 match app.focus {
@@ -2380,6 +2386,9 @@ fn handle_normal_mode(app: &mut App, key: crossterm::event::KeyEvent) -> bool {
             } else {
                 app.pending_g = true;
             }
+        }
+        KeyCode::Char('w') if key.modifiers == KeyModifiers::CONTROL => {
+            app.close_current_tab();
         }
         KeyCode::Char('G') => match app.focus {
             Focus::Sidebar => app.goto_last_sidebar_item(),

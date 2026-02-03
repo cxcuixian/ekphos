@@ -96,7 +96,7 @@ fn default_show_empty_dir() -> bool {
     true
 }
 fn default_theme_name() -> String {
-    "catppuccin-frappe".to_string()
+    "catppuccin-latte".to_string()
 }
 fn default_syntax_theme() -> String {
     "base16-ocean.dark".to_string()

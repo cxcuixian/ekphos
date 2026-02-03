@@ -4,7 +4,7 @@
 [base]
 background = "#303446"
 background_secondary = "#292c3c"
-foreground = "#c6d0f5"
+foreground = "#e5e9f0"
 muted = "#a5adce"
 
 [accent]
@@ -25,7 +25,7 @@ cursor = "#f2d5cf"
 
 [ui.statusbar]
 background = "#292c3c"
-foreground = "#c6d0f5"
+foreground = "#e5e9f0"
 brand = "#8caaee"
 mode = "#a5adce"
 separator = "#626880"
@@ -34,18 +34,18 @@ separator = "#626880"
 background = "#303446"
 border = "#8caaee"
 title = "#8caaee"
-text = "#c6d0f5"
+text = "#e5e9f0"
 
 [ui.sidebar]
-background = "#292c3c"
-item = "#c6d0f5"
+background = "#303446"
+item = "#e5e9f0"
 item_selected = "#ef9f76"
 folder = "#81c8be"
 folder_expanded = "#99d1db"
 
 [ui.content]
 background = "#303446"
-text = "#c6d0f5"
+text = "#e5e9f0"
 heading1 = "#8caaee"
 heading2 = "#a6d189"
 heading3 = "#e5c890"
@@ -67,7 +67,7 @@ heading4 = "#ca9ee6"
 [ui.search]
 background = "#292c3c"
 border = "#8caaee"
-input = "#c6d0f5"
+input = "#e5e9f0"
 match_highlight = "#ef9f76"
 match_current = "#e78284"
 match_count = "#a5adce"

@@ -600,6 +600,126 @@ impl Editor {
         self.visual_block_selection = None;
     }
 
+    pub fn transform_selection_case(&mut self, to_upper: bool) {
+        if let Some((anchor_row, current_row)) = self.visual_line_selection {
+            let (start_row, end_row) = if anchor_row <= current_row {
+                (anchor_row, current_row)
+            } else {
+                (current_row, anchor_row)
+            };
+
+            let mut changed = false;
+            for row in start_row..=end_row {
+                if let Some(line) = self.buffer.line(row) {
+                    let transformed = if to_upper {
+                        line.to_uppercase()
+                    } else {
+                        line.to_lowercase()
+                    };
+                    if line != transformed {
+                        if let Some(line_ref) = self.buffer.line_mut(row) {
+                            *line_ref = transformed;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+            if changed {
+                self.wrap_cache.invalidate_from(start_row);
+            }
+            return;
+        }
+
+        if let Some((anchor, current)) = self.visual_block_selection {
+            let (start_row, end_row) = if anchor.row <= current.row {
+                (anchor.row, current.row)
+            } else {
+                (current.row, anchor.row)
+            };
+            let (start_col, end_col) = if anchor.col <= current.col {
+                (anchor.col, current.col)
+            } else {
+                (current.col, anchor.col)
+            };
+
+            let mut changed = false;
+            for row in start_row..=end_row {
+                if let Some(line) = self.buffer.line(row) {
+                    let chars: Vec<char> = line.chars().collect();
+                    let actual_start = start_col.min(chars.len());
+                    let actual_end = (end_col + 1).min(chars.len());
+
+                    if actual_start < actual_end {
+                        let prefix: String = chars[..actual_start].iter().collect();
+                        let target: String = chars[actual_start..actual_end].iter().collect();
+                        let suffix: String = chars[actual_end..].iter().collect();
+                        let transformed = if to_upper {
+                            target.to_uppercase()
+                        } else {
+                            target.to_lowercase()
+                        };
+
+                        if target != transformed {
+                            if let Some(line_ref) = self.buffer.line_mut(row) {
+                                *line_ref = format!("{}{}{}", prefix, transformed, suffix);
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if changed {
+                self.wrap_cache.invalidate_from(start_row);
+            }
+            return;
+        }
+
+        if let Some((start, end)) = self.cursor.selection_range() {
+            let (start_row, start_col) = (start.row, start.col);
+            let (end_row, end_col) = (end.row, end.col);
+
+            let mut changed = false;
+            for row in start_row..=end_row {
+                if let Some(line) = self.buffer.line(row) {
+                    let chars: Vec<char> = line.chars().collect();
+                    let (s, e) = if row == start_row && row == end_row {
+                        (start_col, end_col.min(chars.len()))
+                    } else if row == start_row {
+                        (start_col, chars.len())
+                    } else if row == end_row {
+                        (0, end_col.min(chars.len()))
+                    } else {
+                        (0, chars.len())
+                    };
+
+                    if s < e {
+                        let prefix: String = chars[..s].iter().collect();
+                        let target: String = chars[s..e].iter().collect();
+                        let suffix: String = chars[e..].iter().collect();
+                        let transformed = if to_upper {
+                            target.to_uppercase()
+                        } else {
+                            target.to_lowercase()
+                        };
+
+                        if target != transformed {
+                            if let Some(line_ref) = self.buffer.line_mut(row) {
+                                *line_ref = format!("{}{}{}", prefix, transformed, suffix);
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if changed {
+                self.wrap_cache.invalidate_from(start_row);
+            }
+        }
+    }
+
     pub fn visual_line_selected_text(&self) -> Option<String> {
         let (anchor_row, current_row) = self.visual_line_selection?;
         let (start_row, end_row) = if anchor_row <= current_row {

@@ -3992,6 +3992,32 @@ fn handle_vim_visual_mode(app: &mut App, key: crossterm::event::KeyEvent) {
             app.visual_line_current = None;
             app.visual_block_anchor = None;
         }
+        KeyCode::Char('u') => {
+            app.editor.transform_selection_case(false);
+            app.editor.cancel_selection();
+            app.editor.clear_visual_line_selection();
+            app.editor.clear_visual_block_selection();
+            app.vim_mode = VimMode::Normal;
+            update_cursor_style(app);
+            app.vim.mode = VimModeNew::Normal;
+            app.vim.reset_pending();
+            app.visual_line_anchor = None;
+            app.visual_line_current = None;
+            app.visual_block_anchor = None;
+        }
+        KeyCode::Char('U') => {
+            app.editor.transform_selection_case(true);
+            app.editor.cancel_selection();
+            app.editor.clear_visual_line_selection();
+            app.editor.clear_visual_block_selection();
+            app.vim_mode = VimMode::Normal;
+            update_cursor_style(app);
+            app.vim.mode = VimModeNew::Normal;
+            app.vim.reset_pending();
+            app.visual_line_anchor = None;
+            app.visual_line_current = None;
+            app.visual_block_anchor = None;
+        }
         KeyCode::Char('s') if key.modifiers == KeyModifiers::CONTROL => {
             app.editor.cancel_selection();
             app.editor.clear_visual_line_selection();

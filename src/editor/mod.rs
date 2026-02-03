@@ -3925,7 +3925,7 @@ impl Editor {
         let mut target_col = 0;
 
         for (row, line) in self.buffer.lines().iter().enumerate() {
-            let line_len = line.len();
+            let line_len = line.chars().count();
             let line_with_newline = line_len + 1;
 
             if current_pos + line_with_newline > start_pos || row == self.buffer.line_count() - 1 {

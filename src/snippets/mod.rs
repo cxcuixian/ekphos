@@ -87,13 +87,12 @@ impl SnippetCollection {
         Self::load_from_path(&path)
     }
 
-    /// Get the default VSCode snippets path
+    /// Get the default ekphos snippets path
     pub fn default_path() -> PathBuf {
         dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join(".config")
-            .join("Code")
-            .join("User")
+            .join("ekphos")
             .join("snippets")
             .join("markdown.json")
     }
